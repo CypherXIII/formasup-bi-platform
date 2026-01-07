@@ -173,7 +173,7 @@ formasup-bi-platform/
 ### 1. Clone the Repository
 
 ```bash
-git clone --recursive https://github.com/CypherXIII/formasup-bi-platform.git
+git clone https://github.com/CypherXIII/formasup-bi-platform.git
 cd formasup-bi-platform
 ```
 
@@ -337,7 +337,7 @@ exit
 ```bash
 # Clone repository
 cd /opt
-sudo git clone --recursive https://github.com/CypherXIII/formasup-bi-platform.git
+sudo git clone https://github.com/CypherXIII/formasup-bi-platform.git
 sudo chown -R $USER:$USER formasup-bi-platform
 cd formasup-bi-platform
 
@@ -451,16 +451,12 @@ pip install pytest pytest-cov pytest-mock
 
 ### Repository Structure
 
-- **Main repository**: `formasup-bi-platform` - Docker orchestration
-- **Submodule `migration/`**: `formasup-data-migration` - Data migration tools
-- **Submodule `superset/`**: Superset configuration and customization
+This is a monorepo containing all components:
 
-### Updating Submodules
-
-```bash
-git submodule update --init --recursive
-git submodule update --remote --merge
-```
+- **Root**: Docker orchestration and main configuration
+- **migration/**: Data migration tools (MariaDB to PostgreSQL)
+- **superset/**: Superset configuration and French translation
+- **deploy/**: VPS deployment resources
 
 ### Building Custom Images
 

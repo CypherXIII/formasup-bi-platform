@@ -24,7 +24,7 @@
 
 ## Overview
 
-This submodule contains the **Superset-specific configuration** for FormaSup BI, a custom instance of Apache Superset 6.0.0.
+This directory contains the **Superset-specific configuration** for FormaSup BI, a custom instance of Apache Superset 6.0.0.
 
 ### Key Features
 
@@ -84,7 +84,10 @@ superset/
 
 ### Steps
 
-1. **Clone Superset source** (if not using submodules):
+1. **Clone Superset source** (included in repository):
+
+The `apache-superset-src/` directory contains Superset 6.0.0 source code.
+If missing, clone it manually:
 
 ```bash
 git clone https://github.com/apache/superset.git apache-superset-src
@@ -120,7 +123,7 @@ docker compose up -d
 
 ## French translation
 
-This submodule provides **complete French translation** for Superset 6.0.0, resolving bug #35569.
+This configuration provides **complete French translation** for Superset 6.0.0, resolving bug #35569.
 
 ### The Problem
 

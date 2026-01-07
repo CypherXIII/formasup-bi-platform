@@ -14,7 +14,7 @@
 - **French translation**: Complete French interface
 - **Security-sensitive**: Contains database credentials configuration
 - **Docker-based**: Multi-container orchestration
-- **Submodule architecture**: Main repo + migration tools + superset config
+- **Monorepo structure**: All components in a single repository
 
 ---
 
