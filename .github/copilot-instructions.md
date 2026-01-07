@@ -9,23 +9,6 @@ This is a production business intelligence platform for FormaSup Auvergne. The p
 - **Docker Compose** for orchestration
 - **Python migration tools** for MariaDB to PostgreSQL migration
 
-### Compliance Context
-
-This project operates under strict compliance requirements:
-
-- **ISO 27001:2022** - Information Security Management System
-- **RGPD/GDPR** - General Data Protection Regulation
-- **Data Classification** - C1 to C4 levels per sensitivity
-- **Regular Audits** - Internal and external security audits
-
-See `security/` folder for detailed documentation:
-- `DATA_CLASSIFICATION.md` - Data sensitivity levels (ISO 27001 A.8.2)
-- `ACCESS_CONTROL.md` - Access control policy (ISO 27001 A.9)
-- `INCIDENT_RESPONSE.md` - Incident handling (ISO 27001 A.16, RGPD Art. 33-34)
-- `DATA_RETENTION.md` - Retention periods (RGPD Art. 5)
-- `THREAT_MODEL.md` - STRIDE threat analysis
-- `HARDENING.md` - Production security checklist
-
 ## Critical Rules
 
 ### Language Requirements
@@ -42,9 +25,8 @@ See `security/` folder for detailed documentation:
 3. **Maintain CSRF protection in Superset configuration** (OWASP)
 4. **Validate all user inputs in migration scripts** (OWASP, RGPD Art. 32)
 5. **Use parameterized queries for database operations** (SQL Injection prevention)
-6. **Respect data classification levels** (C1-C4 per DATA_CLASSIFICATION.md)
-7. **Log security-relevant events** for audit trail (ISO 27001 A.12)
-8. **Consider data retention requirements** when handling personal data (RGPD Art. 5)
+6. **Log security-relevant events** for audit trail (ISO 27001 A.12)
+7. **Consider data retention requirements** when handling personal data (RGPD Art. 5)
 
 ### Architecture Constraints
 
