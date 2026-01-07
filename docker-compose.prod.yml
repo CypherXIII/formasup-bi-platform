@@ -1,0 +1,21 @@
+# Production Docker Compose configuration
+#
+# This file is intended to be used in a production environment.
+# It disables public port exposure for databases and uses a more
+# robust restart policy.
+#
+# Usage:
+# docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+version: '3.8'
+services:
+  superset:
+    restart: always
+
+  postgres:
+    ports: []
+    restart: always
+
+  superset-db:
+    ports: []
+    restart: always
