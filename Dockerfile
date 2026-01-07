@@ -30,7 +30,7 @@ RUN uv pip install psycopg2-binary
 
 # Regenerer messages.json pour les traductions frontend
 # Le Dockerfile officiel supprime les .json, donc on les regenere ici
-COPY backup-messages.po /tmp/messages.po
+COPY superset/backup-messages.po /tmp/messages.po
 RUN npm install -g po2json && \
     po2json --domain superset --format jed1.x --fuzzy /tmp/messages.po \
     /app/superset/translations/fr/LC_MESSAGES/messages.json && \
