@@ -48,6 +48,12 @@ RUN mkdir -p /app/superset/static/assets/images/ && \
     chown -R superset:superset /app/superset/static/assets/ && \
     chmod -R 755 /app/superset/static/assets/
 
+# Copier les assets personnalises (logo et favicon)
+COPY assets/images/logo.png /app/superset/static/assets/images/logo.png
+COPY assets/images/favicon.ico /app/superset/static/assets/images/favicon.ico
+RUN chown superset:superset /app/superset/static/assets/images/logo.png && \
+    chown superset:superset /app/superset/static/assets/images/favicon.ico
+
 # Copier la configuration personnalisee
 COPY config/superset_config.py /app/pythonpath/
 RUN chown superset:superset /app/pythonpath/superset_config.py
