@@ -20,7 +20,7 @@ postgres_docker/
 │   │       └── logo.png
 │   ├── backup-messages.po       # Traductions FR complètes (backup)
 │   ├── build-superset-fr.ps1    # Script de build automatisé
-│   ├── check_locale.py          # Script de test des locales
+│   ├── verifier_locale.py       # Script de test des locales
 │   ├── config/
 │   │   └── superset_config.py   # Configuration personnalisée
 │   └── README.md                # Cette documentation
