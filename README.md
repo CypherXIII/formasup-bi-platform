@@ -19,7 +19,6 @@ postgres_docker/
 │   │       └── logo.png
 │   ├── backup-messages.po       # Complete FR translations (backup)
 │   ├── build-superset-fr.ps1    # Automated build script
-│   ├── check_locale.py          # Locale testing script
 │   ├── config/
 │   │   └── superset_config.py   # Custom configuration
 │   └── Dockerfile               # Custom image extension
