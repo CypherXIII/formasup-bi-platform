@@ -1,10 +1,10 @@
 # FormaSup BI - Plateforme de Reporting
 
-## Presentation
+## Présentation
 
-FormaSup BI est une instance personnalisee d'Apache Superset 6.0.0 configuree pour FormaSup Auvergne et ses partenaires academiques (UCA, Clermont School of Business, ISRP).
+FormaSup BI est une instance personnalisée d'Apache Superset 6.0.0 configurée pour FormaSup Auvergne et ses partenaires académiques (UCA, Clermont School of Business, ISRP).
 
-Interface 100% francaise par defaut.
+**Interface 100% française par défaut** grâce à des corrections techniques du bug #35569 de Superset 6.0.0.
 
 ## Architecture
 
@@ -18,13 +18,12 @@ postgres_docker/
 │   │   ├── images/
 │   │       ├── favicon.ico
 │   │       └── logo.png
-│   ├── backup-messages.po       # Traductions FR completes (backup)
+│   ├── backup-messages.po       # Traductions FR complètes (backup)
 │   ├── check_locale.py          # Script de test des locales
 │   ├── config/
-│   │   └── superset_config.py   # Configuration personnalisee
-│   ├── README-traductions-francaises.md  # Documentation traductions
-│   └── README.md                # Documentation projet
-├── build-superset-fr.ps1        # Script de build automatise
+│   │   └── superset_config.py   # Configuration personnalisée
+│   └── README.md                # Cette documentation
+├── build-superset-fr.ps1        # Script de build automatisé
 ├── docker-compose.yml           # Orchestration des services
 ├── Dockerfile                   # Extension de l'image de base
 └── README.md                    # Documentation principale
@@ -35,20 +34,20 @@ postgres_docker/
 | Service | Port | Description |
 | --------- | ------ | ------------- |
 | superset-fsa | 8088 | Interface Superset |
-| postgres-fsa | 5432 | Base de donnees metier |
-| superset-db | 5442 | Base metadonnees Superset |
+| postgres-fsa | 5432 | Base de données métier |
+| superset-db | 5442 | Base métadonnées Superset |
 
 ## Installation
 
-### Prerequis
+### Prérequis
 
 - Docker Desktop
 - PowerShell 7+
 - 16 GB RAM minimum
 
-### Etapes
+### Étapes
 
-1. **Cloner le depot Superset**
+1. **Cloner le dépôt Superset**
 
 ```powershell
 git clone https://github.com/apache/superset.git superset/apache-superset-src
@@ -57,31 +56,52 @@ git checkout 6.0.0
 cd ../..
 ```
 
-1. **Construire l'image francaise**
+2. **Construire l'image française**
 
 ```powershell
 .\build-superset-fr.ps1
 ```
 
-1. **Demarrer les services**
+3. **Démarrer les services**
 
 ```powershell
 docker compose up -d
 ```
 
-1. **Acceder a l'application**
+4. **Accéder à l'application**
 
 - URL : <http://localhost:8088>
 - Login : admin
 - Mot de passe : admin
 
-## Modifications appliquees
+## Traductions Françaises
 
-Le script `build-superset-fr.ps1` effectue 5 modifications pour forcer le francais :
+### Problème résolu
+
+Superset 6.0.0 présente un bug connu (#35569) qui cause une **race condition** dans le chargement des traductions françaises. Ce bug empêche l'affichage des traductions malgré la présence des fichiers.
+
+### Solutions appliquées
+
+#### 1. Corrections du code source
+- **Backend** (`superset/views/base.py`) : Utilisation de `BABEL_DEFAULT_LOCALE` au lieu du fallback "en"
+- **Frontend** (`superset-frontend/src/preamble.ts`) : Attendre le chargement du language pack avant rendu React
+
+#### 2. Configuration personnalisée
+- `BABEL_DEFAULT_LOCALE = "fr"`
+- `LANGUAGES = {"fr": {"flag": "fr", "name": "Français"}}`
+- Workaround pour contourner la race condition
+
+#### 3. Architecture des traductions
+- **Backend** : Fichiers `.po` → `.mo` (Flask-Babel)
+- **Frontend** : Fichiers `.po` → `.json` (format jed1.x)
+
+### Modifications appliquées
+
+Le script `build-superset-fr.ps1` effectue 5 modifications pour forcer le français :
 
 | Fichier | Modification |
 | --------- | -------------- |
-| messages.po | Traductions completes (0 chaines vides) |
+| messages.po | Traductions complètes (0 chaînes vides) |
 | superset/config.py | BABEL_DEFAULT_LOCALE = "fr" |
 | superset-frontend/src/constants.ts | locale: 'fr', lang: 'fr' |
 | plugin-chart-echarts/src/constants.ts | DEFAULT_LOCALE = 'fr' |
@@ -89,7 +109,7 @@ Le script `build-superset-fr.ps1` effectue 5 modifications pour forcer le franca
 
 ## Commandes utiles
 
-### Redemarrer Superset
+### Redémarrer Superset
 
 ```powershell
 docker compose restart superset
@@ -115,12 +135,25 @@ docker exec superset-db pg_dump -U superset superset > backup_superset.sql
 docker compose up -d
 ```
 
-## Depannage
+### Vérifier les traductions
+
+```bash
+# Fichiers présents
+docker exec superset-fsa ls -la /app/superset/translations/fr/LC_MESSAGES/
+
+# Endpoint fonctionnel
+docker exec superset-fsa curl -s 'http://localhost:8088/superset/language_pack/fr/' | head -20
+
+# Logs d'initialisation
+docker logs superset-fsa | grep -i "language\|traduction\|fr"
+```
+
+## Dépannage
 
 ### Interface en anglais
 
 1. Vider le cache navigateur (Ctrl+Shift+Suppr)
-2. Verifier l'image : `docker images superset-fr-formasup`
+2. Vérifier l'image : `docker images superset-fr-formasup`
 3. Reconstruire : `.\build-superset-fr.ps1`
 
 ### Erreur de connexion
@@ -129,15 +162,32 @@ docker compose up -d
 docker compose ps
 ```
 
-Tous les services doivent etre "healthy" ou "running".
+Tous les services doivent être "healthy" ou "running".
 
-## Configuration avancee
+### Debug avancé
 
-Editer `superset/config/superset_config.py` pour :
+```bash
+# Inspecter le bootstrap data
+docker exec superset-fsa curl -s 'http://localhost:8088/superset/bootstrap_data/' | jq '.locale'
+
+# Vérifier les permissions
+docker exec superset-fsa python -c "
+from superset import app
+from superset.app import create_app
+app = create_app()
+with app.app_context():
+    from superset import security_manager
+    print('Public role permissions:', [p.name for p in security_manager.get_public_role().permissions])
+"
+```
+
+## Configuration avancée
+
+Éditer `superset/config/superset_config.py` pour :
 
 - Modifier le branding
 - Configurer les caches
-- Activer/desactiver des fonctionnalites
+- Activer/désactiver des fonctionnalités
 - Configurer Row Level Security
 
 ## Licence
