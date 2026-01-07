@@ -79,13 +79,13 @@ FILTER_SELECT_ROW_LIMIT = 10000
 # =============================================================================
 
 APP_NAME = "FormaSup BI"
-APP_ICON = "/static/assets/images/logo.png"
+APP_ICON = "/assets/images/logo.png"
 LOGO_TARGET_PATH = "/superset/welcome"
 LOGO_TOOLTIP = "Accueil FormaSup BI"
 LOGO_RIGHT_TEXT = ""
 
 # Custom favicon
-FAVICONS = [{"href": "/static/assets/images/favicon.ico"}]
+FAVICONS = [{"href": "/assets/images/favicon.ico"}]
 
 # =============================================================================
 # FRENCH LANGUAGE - Main Configuration
