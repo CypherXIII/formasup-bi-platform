@@ -1,143 +1,243 @@
-# FormaSup BI - Plateforme de Reporting
+# FormaSup BI - Reporting Platform
 
-## Presentation
+## Overview
 
-FormaSup BI est une instance personnalisee d'Apache Superset 6.0.0 configuree pour FormaSup Auvergne et ses partenaires academiques (UCA, Clermont School of Business, ISRP).
+FormaSup BI is a custom instance of Apache Superset 6.0.0 configured for FormaSup Auvergne and its academic partners (UCA, Clermont School of Business, ISRP).
 
-Interface 100% francaise par defaut.
+**100% French interface by default** thanks to technical fixes for Superset 6.0.0 bug #35569.
 
 ## Architecture
 
 ```txt
 postgres_docker/
-├── apache-superset-src/         # Code source Superset (tag 6.0.0)
-├── init/                        # Scripts init PostgreSQL
-├── migration/                   # Scripts de migration
-├── superset/
-│   └── config/
-│       └── superset_config.py   # Configuration personnalisee
-├── backup-messages.po           # Traductions FR completes (backup)
-├── build-superset-fr.ps1        # Script de build automatise
-├── docker-compose.yml           # Orchestration des services
-├── Dockerfile                   # Extension de l'image de base
-└── README.md                    # Documentation
+├── init/                        # PostgreSQL init scripts
+├── migration/                   # Data migration scripts (Git submodule)
+├── superset/                    # Superset configuration (Git submodule)
+│   ├── apache-superset-src/     # Apache Superset 6.0.0 source code
+│   ├── assets/                  # Static resources
+│   │   └── images/              # Logos and favicons
+│   ├── config/                  # Configuration files
+│   │   └── superset_config.py   # Custom Superset configuration
+│   ├── docker/                  # Docker-related files
+│   │   └── Dockerfile           # Custom French Superset image
+│   ├── locales/                 # Translation and localization files
+│   │   └── backup-messages.po   # Complete French translations backup
+│   ├── scripts/                 # Build and automation scripts
+│   │   └── build-superset-fr.ps1 # Automated French build script
+│   └── README.md                # Superset submodule documentation
+├── docker-compose.yml           # Service orchestration
+├── .gitmodules                  # Git submodules configuration
+└── README.md                    # This documentation
+```
+
+### Project Organization
+
+The project follows a **modular and organized structure** for better maintainability:
+
+- **`apache-superset-src/`**: Complete Apache Superset 6.0.0 source code (~43MB)
+- **`assets/`**: Static resources (logos, favicons, images)
+- **`config/`**: Configuration files and custom settings
+- **`docker/`**: Docker-related files and container definitions
+- **`locales/`**: Translation files and localization resources
+- **`scripts/`**: Build scripts, automation, and tooling
+
+### Git Submodules
+
+This project uses Git submodules for better organization:
+
+- **`superset/`**: Independent repository containing Superset-specific configurations, assets, and build scripts
+- **`migration/`**: Independent repository containing data migration tools and scripts
+
+To clone with submodules:
+```bash
+git clone --recursive https://github.com/CypherXIII/superset_formasup.git
+```
+
+To update submodules:
+```bash
+git submodule update --remote
 ```
 
 ### Services
 
 | Service | Port | Description |
 | --------- | ------ | ------------- |
-| superset-fsa | 8088 | Interface Superset |
-| postgres-fsa | 5432 | Base de donnees metier |
-| superset-db | 5442 | Base metadonnees Superset |
+| superset-fsa | 8088 | Superset interface |
+| postgres-fsa | 5432 | Business database |
+| superset-db | 5442 | Superset metadata database |
 
 ## Installation
 
-### Prerequis
+### Prerequisites
 
 - Docker Desktop
 - PowerShell 7+
 - 16 GB RAM minimum
 
-### Etapes
+### Steps
 
-1. **Cloner le depot Superset**
+1. **Clone Superset repository**
 
 ```powershell
-git clone https://github.com/apache/superset.git apache-superset-src
-cd apache-superset-src
+git clone https://github.com/apache/superset.git superset/apache-superset-src
+cd superset/apache-superset-src
 git checkout 6.0.0
+cd ../..
+```
+
+2. **Build the French image**
+
+```powershell
+cd superset
+.\scripts\build-superset-fr.ps1
 cd ..
 ```
 
-1. **Construire l'image francaise**
-
-```powershell
-.\build-superset-fr.ps1
-```
-
-1. **Demarrer les services**
+3. **Start services**
 
 ```powershell
 docker compose up -d
 ```
 
-1. **Acceder a l'application**
+4. **Access the application**
 
-- URL : <http://localhost:8088>
-- Login : admin
-- Mot de passe : admin
+- URL: <http://localhost:8088>
+- Login: admin
+- Password: admin
 
-## Modifications appliquees
+### 📁 Updated File Paths
 
-Le script `build-superset-fr.ps1` effectue 5 modifications pour forcer le francais :
+**Important**: File paths have been reorganized for better maintainability:
 
-| Fichier | Modification |
+- **Build script**: `superset/build-superset-fr.ps1` → `superset/scripts/build-superset-fr.ps1`
+- **Translations**: `superset/backup-messages.po` → `superset/locales/backup-messages.po`
+- **Dockerfile**: `superset/Dockerfile` → `superset/docker/Dockerfile`
+
+The `docker-compose.yml` has been updated to reference the new Dockerfile path.
+
+## French Translations
+
+### Problem Solved
+
+Superset 6.0.0 has a known bug (#35569) that causes a **race condition** in French translation loading. This bug prevents translation display despite file presence.
+
+### Applied Solutions
+
+#### 1. Source code fixes
+- **Backend** (`superset/views/base.py`): Use `BABEL_DEFAULT_LOCALE` instead of "en" fallback
+- **Frontend** (`superset-frontend/src/preamble.ts`): Wait for language pack loading before React rendering
+
+#### 2. Custom configuration
+- `BABEL_DEFAULT_LOCALE = "fr"`
+- `LANGUAGES = {"fr": {"flag": "fr", "name": "Français"}}`
+- Workaround to bypass race condition
+
+#### 3. Translation architecture
+- **Backend**: `.po` files → `.mo` (Flask-Babel)
+- **Frontend**: `.po` files → `.json` (jed1.x format)
+
+### Applied Modifications
+
+The `build-superset-fr.ps1` script performs 5 modifications to force French:
+
+| File | Modification |
 | --------- | -------------- |
-| messages.po | Traductions completes (0 chaines vides) |
+| messages.po | Complete translations (0 empty strings) |
 | superset/config.py | BABEL_DEFAULT_LOCALE = "fr" |
 | superset-frontend/src/constants.ts | locale: 'fr', lang: 'fr' |
 | plugin-chart-echarts/src/constants.ts | DEFAULT_LOCALE = 'fr' |
 | CurrencyFormatter.ts | locale = 'fr-FR' |
 
-## Commandes utiles
+## Useful Commands
 
-### Redemarrer Superset
+### Restart Superset
 
 ```powershell
 docker compose restart superset
 ```
 
-### Voir les logs
+### View logs
 
 ```powershell
 docker logs superset-fsa --tail 100 -f
 ```
 
-### Sauvegarder les bases
+### Backup databases
 
 ```powershell
 docker exec postgres-fsa pg_dump -U postgres FSA > backup_fsa.sql
 docker exec superset-db pg_dump -U superset superset > backup_superset.sql
 ```
 
-### Reconstruire l'image
+### Rebuild image
 
 ```powershell
+cd superset
 .\build-superset-fr.ps1
+cd ..
 docker compose up -d
 ```
 
-## Depannage
+### Check translations
 
-### Interface en anglais
+```bash
+# Check present files
+docker exec superset-fsa ls -la /app/superset/translations/fr/LC_MESSAGES/
 
-1. Vider le cache navigateur (Ctrl+Shift+Suppr)
-2. Verifier l'image : `docker images superset-fr-formasup`
-3. Reconstruire : `.\build-superset-fr.ps1`
+# Functional endpoint
+docker exec superset-fsa curl -s 'http://localhost:8088/superset/language_pack/fr/' | head -20
 
-### Erreur de connexion
+# Initialization logs
+docker logs superset-fsa | grep -i "language\|traduction\|fr"
+```
+
+## Troubleshooting
+
+### English interface
+
+1. Clear browser cache (Ctrl+Shift+Del)
+2. Check image: `docker images superset-fr-formasup`
+3. Rebuild: `cd superset && .\build-superset-fr.ps1 && cd ..`
+
+### Connection error
 
 ```powershell
 docker compose ps
 ```
 
-Tous les services doivent etre "healthy" ou "running".
+All services should be "healthy" or "running".
 
-## Configuration avancee
+### Advanced debugging
 
-Editer `superset/config/superset_config.py` pour :
+```bash
+# Inspect bootstrap data
+docker exec superset-fsa curl -s 'http://localhost:8088/superset/bootstrap_data/' | jq '.locale'
 
-- Modifier le branding
-- Configurer les caches
-- Activer/desactiver des fonctionnalites
-- Configurer Row Level Security
+# Check permissions
+docker exec superset-fsa python -c "
+from superset import app
+from superset.app import create_app
+app = create_app()
+with app.app_context():
+    from superset import security_manager
+    print('Public role permissions:', [p.name for p in security_manager.get_public_role().permissions])
+"
+```
 
-## Licence
+## Advanced Configuration
 
-Apache Superset : Licence Apache 2.0
+Edit `superset/config/superset_config.py` to:
+
+- Modify branding
+- Configure caches
+- Enable/disable features
+- Configure Row Level Security
+
+## License
+
+Apache Superset: Apache 2.0 License
 
 ---
 
-**Version** : 1.0.0 (Janvier 2026)
-**Base** : Apache Superset 6.0.0
+**Version**: 1.0.0 (January 2026)
+**Base**: Apache Superset 6.0.0

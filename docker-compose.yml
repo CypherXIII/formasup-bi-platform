@@ -1,6 +1,8 @@
 services:
   superset:
-    build: .
+    build:
+      context: ./superset
+      dockerfile: docker/Dockerfile
     image: superset-fr-formasup-local:latest
     container_name: superset-fsa
     restart: always
