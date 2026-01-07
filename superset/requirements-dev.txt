@@ -1,0 +1,9 @@
+# Development and test dependencies for Superset FormaSup
+
+# Test framework
+pytest>=7.0.0,<8.0
+pytest-cov>=4.0.0,<5.0
+pytest-mock>=3.10.0,<4.0
+
+# For Python configuration tests
+pathlib>=1.0.0
