@@ -35,18 +35,6 @@ run_tests "Superset" "superset"
 
 echo ""
 echo "==============================================================="
-echo "  Documentation Generation"
-echo "==============================================================="
-if ! [ -x "$(command -v doxygen)" ]; then
-  echo "[WARN] Doxygen is not installed. Skipping documentation generation."
-else
-  echo "[RUN] Generating Doxygen documentation..."
-  doxygen Doxyfile > doxygen.log 2>&1
-  echo "[OK] Doxygen documentation generated. See doxygen.log for details."
-fi
-
-echo ""
-echo "==============================================================="
 echo "  Test Summary"
 echo "==============================================================="
 echo "Submodules tested: Migration, Superset"
