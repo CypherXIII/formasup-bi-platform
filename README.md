@@ -108,11 +108,9 @@ formasup-bi-platform/
 │   └── tests/                 # Test suite (25 tests)
 │
 ├── deploy/                     # VPS deployment resources
-│   ├── nginx.conf             # Reverse proxy configuration
-│   └── superset.service       # systemd service file
-│
-└── security/                   # Security documentation
-    └── SECURITY.md            # Security policy
+    ├── nginx.conf             # Reverse proxy configuration
+    └── superset.service       # systemd service file
+
 ```
 
 ### Services
@@ -281,10 +279,6 @@ This project follows **secure-by-default** principles:
 - Database ports are exposed by default (for development)
 - No built-in rate limiting (use reverse proxy)
 - No built-in authentication integration (LDAP/OAuth configurable)
-
-### Reporting Security Issues
-
-See [SECURITY.md](security/SECURITY.md) for vulnerability reporting procedures.
 
 ---
 

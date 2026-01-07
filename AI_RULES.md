@@ -30,18 +30,8 @@ All AI interactions must respect the following constraints and security requirem
 - **NEVER disable security features** (ISO 27001 A.12)
 - **NEVER log sensitive data** (RGPD Art. 32)
 - **ALWAYS use environment variables** (ISO 27001 A.9)
-- **RESPECT data classification** (C1-C4 levels per security/DATA_CLASSIFICATION.md)
 - **CONSIDER retention periods** when handling data (RGPD Art. 5)
 - **PRESERVE audit trails** for compliance (ISO 27001 A.12.4)
-
-See `security/` folder for detailed policies:
-
-- DATA_CLASSIFICATION.md - Data sensitivity levels
-- ACCESS_CONTROL.md - Access control policy
-- INCIDENT_RESPONSE.md - Incident handling procedures
-- DATA_RETENTION.md - Retention and deletion policy
-- THREAT_MODEL.md - STRIDE threat analysis
-- HARDENING.md - Production security checklist
 
 ### 3. Architecture
 
