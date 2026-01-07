@@ -74,7 +74,7 @@ This project includes **complete French localization** for Superset 6.0.0, resol
 - Custom build script with 5 targeted modifications
 - Complete translation files backup
 
-📖 **Detailed documentation**: See `superset/README-superset-french-fix.md` for technical implementation details.
+**Detailed documentation**: See `superset/README-superset-french-fix.md` for technical implementation details.
 
 ## Useful Commands
 
