@@ -1,39 +1,39 @@
 # FormaSup BI - Superset Docker
 
-Plateforme de Business Intelligence basée sur Apache Superset 6.0.0, configurée pour FormaSup Auvergne.
+Business Intelligence platform based on Apache Superset 6.0.0, configured for FormaSup Auvergne.
 
-## 🚀 Démarrage rapide
+## 🚀 Quick Start
 
 ```bash
-# Aller dans le dossier superset
+# Go to superset folder
 cd superset
 
-# Construire l'image française
+# Build the French image
 .\build-superset-fr.ps1
 
-# Retour à la racine
+# Go back to root
 cd ..
 
-# Démarrer les services
+# Start services
 docker compose up -d
 
-# Accéder à l'application
+# Access the application
 # URL: http://localhost:8088
 # Login: admin / admin
 ```
 
-## 📁 Structure du projet
+## 📁 Project Structure
 
-- `superset/` - Configuration et sources Superset
-- `init/` - Scripts d'initialisation PostgreSQL
-- `migration/` - Scripts de migration de données
-- `docker-compose.yml` - Orchestration des services
-- `Dockerfile` - Image personnalisée
+- `superset/` - Superset configuration and sources
+- `init/` - PostgreSQL initialization scripts
+- `migration/` - Data migration scripts
+- `docker-compose.yml` - Service orchestration
+- `Dockerfile` - Custom image
 
-## 📖 Documentation complète
+## 📖 Complete Documentation
 
-Voir [`superset/README.md`](superset/README.md) pour la documentation détaillée.
+See [`superset/README.md`](superset/README.md) for detailed documentation.
 
-## 🐛 Problèmes ?
+## 🐛 Issues?
 
-Consultez la section dépannage dans [`superset/README.md`](superset/README.md).
+Check the troubleshooting section in [`superset/README.md`](superset/README.md).
