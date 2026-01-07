@@ -23,7 +23,7 @@ docker compose up -d
 ## Architecture
 
 ```txt
-postgres_docker/
+formasup-bi-platform/
 ├── init/                        # PostgreSQL init scripts
 ├── migration/                   # Data migration scripts (Git submodule)
 ├── superset/                    # Superset configuration (Git submodule)
@@ -257,7 +257,7 @@ Edit `superset/config/superset_config.py` to:
 ### Repository Structure
 
 - **`formasup-bi-platform`**: Main repository with Docker orchestration
-- **`formasup-data-migration`**: Data migration tools and scripts
+- **`formasup-migration-tools`**: Data migration tools and scripts
 - **`superset/`**: Superset configuration and customizations
 
 ### Contributing
