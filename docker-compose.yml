@@ -1,6 +1,6 @@
 services:
   superset:
-    build: .
+    build: ./superset
     image: superset-fr-formasup-local:latest
     container_name: superset-fsa
     restart: always
