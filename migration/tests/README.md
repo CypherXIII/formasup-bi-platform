@@ -116,10 +116,10 @@ Tests use mocked environment variables:
 
 ```python
 {
-    'MARIADB_HOST': 'test-host',
-    'MARIADB_USER': 'test-user',
-    'MARIADB_PASSWORD': 'test-pass',
-    'MARIADB_DB': 'test-db',
+    'MARIA_HOST': 'test-host',
+    'MARIA_USER': 'test-user',
+    'MARIA_PASSWORD': 'test-pass',
+    'MARIA_DB': 'test-db',
     'PG_HOST': 'test-host',
     'PG_USER': 'test-user',
     'PG_PASSWORD': 'test-pass',

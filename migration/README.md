@@ -138,11 +138,11 @@ Create a `.env` file with the following variables:
 # =============================================================================
 # MariaDB Source Database
 # =============================================================================
-MARIADB_HOST=localhost
-MARIADB_PORT=3306
-MARIADB_USER=root
-MARIADB_PASSWORD=your_password
-MARIADB_DB=source_database
+MARIA_HOST=localhost
+MARIA_PORT=3306
+MARIA_USER=root
+MARIA_PASSWORD=your_password
+MARIA_DB=source_database
 
 # =============================================================================
 # PostgreSQL Target Database
@@ -159,8 +159,6 @@ PG_TEMP_SCHEMA=temp_staging
 # Performance Settings
 # =============================================================================
 BATCH_SIZE=500
-MARIADB_QUERY_LIMIT=1200
-QUERY_LIMIT_THRESHOLD=0.98
 
 # =============================================================================
 # API Enrichment (Optional)
@@ -186,8 +184,6 @@ DB_METRICS_LOG=db_metrics.log
 | Parameter                 | Description                  | Default |
 |---------------------------|------------------------------|---------|
 | `BATCH_SIZE`              | Records per batch insert     | 500     |
-| `MARIADB_QUERY_LIMIT`     | Total MariaDB query limit    | 1200    |
-| `QUERY_LIMIT_THRESHOLD`   | Warning threshold percentage | 0.98    |
 | `API_REQUESTS_PER_SECOND` | API rate limit               | 7       |
 | `DB_METRICS_SLOW_MS`      | Slow query threshold (ms)    | 200     |
 
@@ -246,7 +242,7 @@ docker run --env-file .env migration-app
 docker run --env-file .env migration-app python migrate.py --step migrate --dry-run
 
 # Using host.docker.internal for local databases
-docker run -e MARIADB_HOST=host.docker.internal \
+docker run -e MARIA_HOST=host.docker.internal \
            -e PG_HOST=host.docker.internal \
            --env-file .env migration-app
 ```
@@ -401,9 +397,8 @@ python -c "import psycopg2; psycopg2.connect(host='localhost', user='postgres', 
 
 If you see "Query limit approaching" warnings:
 
-1. Increase `MARIADB_QUERY_LIMIT` if server allows
-2. Reduce `BATCH_SIZE` to make fewer, larger batches
-3. Use `--tables` to migrate in smaller chunks
+1. Reduce `BATCH_SIZE` to make fewer, larger batches
+2. Use `--tables` to migrate in smaller chunks
 
 ### Performance Issues
 

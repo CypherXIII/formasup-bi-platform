@@ -223,10 +223,10 @@ SUPERSET_DB_PASSWORD=superset
 # =============================================================================
 
 # MariaDB source
-MARIADB_HOST=localhost
-MARIADB_USER=root
-MARIADB_PASSWORD=your-mariadb-password
-MARIADB_DB=source_database
+MARIA_HOST=localhost
+MARIA_USER=root
+MARIA_PASSWORD=your-mariadb-password
+MARIA_DB=source_database
 
 # PostgreSQL target
 PG_HOST=localhost
