@@ -63,11 +63,13 @@ This project uses Git submodules for better organization:
 - **`migration/`**: Independent repository containing data migration tools and scripts
 
 To clone with submodules:
+
 ```bash
 git clone --recursive https://github.com/CypherXIII/formasup-bi-platform.git
 ```
 
 To update submodules:
+
 ```bash
 git submodule update --remote
 ```
