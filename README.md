@@ -78,13 +78,16 @@ A production-ready Business Intelligence platform based on Apache Superset 6.0.0
 ```text
 formasup-bi-platform/
 ├── docker-compose.yml          # Service orchestration
+├── docker-compose.prod.yml     # Production configuration
 ├── .env.example                # Environment template
 ├── README.md                   # This documentation
+├── run-tests.ps1               # PowerShell test runner
+├── run-tests.sh                # Bash test runner
 │
 ├── init/                       # PostgreSQL initialization scripts
 │   └── *.sql                   # Database schema and initial data
 │
-├── migration/                  # Submodule: Data migration tools
+├── migration/                  # Submodule: formasup-migration-tools
 │   ├── migrate.py             # Main entry point
 │   ├── config.py              # Configuration management
 │   ├── database.py            # Database connections
@@ -93,8 +96,8 @@ formasup-bi-platform/
 │   ├── tests/                 # Test suite (54 tests)
 │   └── Dockerfile             # Migration container
 │
-├── superset/                   # Submodule: Superset configuration
-│   ├── apache-superset-src/   # Superset 6.0.0 source code
+├── superset/                   # Submodule: formasup-superset-config
+│   ├── apache-superset-src/   # Superset 6.0.0 with French fix
 │   ├── config/                # Custom configuration
 │   │   └── superset_config.py # Superset settings
 │   ├── docker/                # Docker files
