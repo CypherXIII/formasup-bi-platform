@@ -1,6 +1,6 @@
 [submodule "superset"]
 	path = superset
-	url = https://github.com/CypherXIII/formasup-bi-platform.git
+	url = https://github.com/CypherXIII/formasup-superset-config.git
 [submodule "migration"]
 	path = migration
 	url = https://github.com/CypherXIII/formasup-migration-tools.git
