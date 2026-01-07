@@ -6,6 +6,20 @@ FormaSup BI is a custom instance of Apache Superset 6.0.0 configured for FormaSu
 
 **100% French interface by default** thanks to technical fixes for Superset 6.0.0 bug #35569.
 
+## Quick Start
+
+```bash
+# Clone the project with submodules
+git clone --recursive https://github.com/CypherXIII/formasup-bi-platform.git
+cd formasup-bi-platform
+
+# Start all services
+docker compose up -d
+
+# Access Superset at http://localhost:8088
+# Login: admin / Password: admin
+```
+
 ## Architecture
 
 ```txt
@@ -50,7 +64,7 @@ This project uses Git submodules for better organization:
 
 To clone with submodules:
 ```bash
-git clone --recursive https://github.com/CypherXIII/superset_formasup.git
+git clone --recursive https://github.com/CypherXIII/formasup-bi-platform.git
 ```
 
 To update submodules:
@@ -105,7 +119,7 @@ docker compose up -d
 - Login: admin
 - Password: admin
 
-### 📁 Updated File Paths
+### Updated File Paths
 
 **Important**: File paths have been reorganized for better maintainability:
 
@@ -232,6 +246,31 @@ Edit `superset/config/superset_config.py` to:
 - Configure caches
 - Enable/disable features
 - Configure Row Level Security
+
+## Development
+
+### Repository Structure
+- **`formasup-bi-platform`**: Main repository with Docker orchestration
+- **`formasup-data-migration`**: Data migration tools and scripts
+- **`superset/`**: Superset configuration and customizations
+
+### Contributing
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Make your changes and test them
+4. Commit your changes: `git commit -m 'Add your feature'`
+5. Push to the branch: `git push origin feature/your-feature`
+6. Create a Pull Request
+
+### Building Custom Images
+For development, rebuild the French Superset image after configuration changes:
+
+```bash
+cd superset
+.\scripts\build-superset-fr.ps1
+cd ..
+docker compose up -d --build
+```
 
 ## License
 
