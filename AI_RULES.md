@@ -6,7 +6,13 @@
 
 ## Scope Definition
 
-This repository is a **production Business Intelligence system**. All AI interactions must respect the following constraints.
+This repository is a **production Business Intelligence system** operating under:
+
+- **ISO 27001:2022** Information Security Management System compliance
+- **RGPD/GDPR** General Data Protection Regulation compliance
+- **Regular security audits** (internal and external)
+
+All AI interactions must respect the following constraints and security requirements.
 
 ---
 
@@ -18,12 +24,23 @@ This repository is a **production Business Intelligence system**. All AI interac
 - Comments, documentation, variable names, commit messages
 - No exceptions
 
-### 2. Security
+### 2. Security (ISO 27001 / RGPD Compliance)
 
-- **NEVER expose credentials**
-- **NEVER disable security features**
-- **NEVER log sensitive data**
-- **ALWAYS use environment variables**
+- **NEVER expose credentials** (ISO 27001 A.9)
+- **NEVER disable security features** (ISO 27001 A.12)
+- **NEVER log sensitive data** (RGPD Art. 32)
+- **ALWAYS use environment variables** (ISO 27001 A.9)
+- **RESPECT data classification** (C1-C4 levels per security/DATA_CLASSIFICATION.md)
+- **CONSIDER retention periods** when handling data (RGPD Art. 5)
+- **PRESERVE audit trails** for compliance (ISO 27001 A.12.4)
+
+See `security/` folder for detailed policies:
+- DATA_CLASSIFICATION.md - Data sensitivity levels
+- ACCESS_CONTROL.md - Access control policy
+- INCIDENT_RESPONSE.md - Incident handling procedures
+- DATA_RETENTION.md - Retention and deletion policy
+- THREAT_MODEL.md - STRIDE threat analysis
+- HARDENING.md - Production security checklist
 
 ### 3. Architecture
 
@@ -153,6 +170,7 @@ These rules are:
 
 ## Version
 
-- **Version**: 1.0.0
+- **Version**: 1.1.0
 - **Date**: January 2026
 - **Author**: Marie Challet
+- **Compliance**: ISO 27001:2022, RGPD
