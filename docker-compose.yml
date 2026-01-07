@@ -9,11 +9,11 @@ services:
     ports:
       - "8088:8088"
     environment:
-      DATABASE_URL: "postgresql://superset:superset@superset-db:5432/superset"
-      SUPERSET_SECRET_KEY: "eiJBxyBH2wY/WPoKpAtytlL62pFDOLhu025PNVt0Z5foxRFM+lFUgwvT"
+      DATABASE_URL: "postgresql://${SUPERSET_DB_USER}:${SUPERSET_DB_PASSWORD}@superset-db:5432/superset"
+      SUPERSET_SECRET_KEY: "${SUPERSET_SECRET_KEY}"
       PYTHONPATH: "/app/pythonpath"
       SUPERSET_LOAD_EXAMPLES: "no"
-      # Locales françaises
+      # French locales
       LANG: "fr_FR.UTF-8"
       LANGUAGE: "fr_FR:fr"
       LC_ALL: "fr_FR.UTF-8"
@@ -37,7 +37,7 @@ services:
       start_period: 60s
     command: >
       bash -c "superset db upgrade &&
-        superset fab create-admin --username admin --firstname Admin --lastname User --email admin@fsa.local --password admin 2>/dev/null || true &&
+        superset fab create-admin --username ${SUPERSET_ADMIN_USER} --firstname Admin --lastname User --email ${SUPERSET_ADMIN_EMAIL} --password ${SUPERSET_ADMIN_PASSWORD} 2>/dev/null || true &&
         superset init &&
         superset run -h 0.0.0.0 -p 8088"
 
@@ -46,9 +46,9 @@ services:
     container_name: postgres-fsa
     restart: always
     environment:
-      POSTGRES_DB: FSA
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: F0rm4sup2025!Db#Secure$
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -56,7 +56,7 @@ services:
     networks:
       - fsa-net
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d FSA" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -67,8 +67,8 @@ services:
     restart: always
     environment:
       POSTGRES_DB: superset
-      POSTGRES_USER: superset
-      POSTGRES_PASSWORD: superset
+      POSTGRES_USER: ${SUPERSET_DB_USER}
+      POSTGRES_PASSWORD: ${SUPERSET_DB_PASSWORD}
     ports:
       - "5442:5432"
     volumes:
@@ -76,7 +76,7 @@ services:
     networks:
       - fsa-net
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U superset -d superset" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${SUPERSET_DB_USER} -d superset" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -92,7 +92,6 @@ services:
     volumes:
       - ./migration:/app
 
-
 networks:
   fsa-net:
     driver: bridge
@@ -100,5 +99,3 @@ networks:
 volumes:
   superset_home:
   superset_db_data:
-
-

@@ -1,0 +1,72 @@
+# FormaSup BI Platform - Superset Service
+#
+# systemd service unit file for Apache Superset (Docker)
+#
+# Author: Marie Challet
+# Organization: FormaSup Auvergne
+#
+# Installation:
+#   1. Copy to /etc/systemd/system/superset.service
+#   2. Update paths as needed
+#   3. Enable: systemctl enable superset
+#   4. Start: systemctl start superset
+#
+# Commands:
+#   - Start: systemctl start superset
+#   - Stop: systemctl stop superset
+#   - Restart: systemctl restart superset
+#   - Status: systemctl status superset
+#   - Logs: journalctl -u superset -f
+
+[Unit]
+Description=FormaSup BI Platform - Apache Superset
+Documentation=https://github.com/formasup-auvergne/postgres_docker
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=docker
+
+# Working directory (update path as needed)
+WorkingDirectory=/opt/formasup-bi
+
+# Environment file
+EnvironmentFile=/opt/formasup-bi/.env
+
+# Pre-start: Pull latest images and verify configuration
+ExecStartPre=/usr/bin/docker compose pull --quiet
+ExecStartPre=/usr/bin/docker compose config --quiet
+
+# Start command
+ExecStart=/usr/bin/docker compose up --remove-orphans
+
+# Stop command (graceful shutdown with timeout)
+ExecStop=/usr/bin/docker compose down --timeout 30
+
+# Restart configuration
+Restart=on-failure
+RestartSec=30
+StartLimitInterval=400
+StartLimitBurst=3
+
+# Timeouts
+TimeoutStartSec=300
+TimeoutStopSec=60
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/formasup-bi
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=superset
+
+[Install]
+WantedBy=multi-user.target
