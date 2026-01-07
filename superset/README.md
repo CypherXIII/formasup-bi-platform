@@ -93,7 +93,7 @@ git checkout 6.0.0
 cd ..
 ```
 
-1. **Build the French image**:
+2. **Build the French image**:
 
 ```powershell
 # Windows
@@ -103,14 +103,14 @@ cd ..
 ./scripts/build-superset-fr.ps1
 ```
 
-1. **Start services** (from parent directory):
+3. **Start services** (from parent directory):
 
 ```bash
 cd ..
 docker compose up -d
 ```
 
-1. **Access the application**:
+4. **Access the application**:
 
 - **URL**: <http://localhost:8088>
 - **Username**: admin

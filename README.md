@@ -169,8 +169,11 @@ nano .env
 ### 3. Start Services
 
 ```bash
-# Start all services
+# Development mode
 docker compose up -d
+
+# Production mode (recommended)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 # View logs
 docker compose logs -f superset
@@ -353,8 +356,8 @@ sudo certbot --nginx -d bi.yourdomain.com
 ### Step 5: Start Services
 
 ```bash
-# Start containers
-docker compose up -d
+# Start containers (production mode)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 # Verify services
 docker compose ps
