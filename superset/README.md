@@ -23,9 +23,10 @@ postgres_docker/
 │   ├── check_locale.py          # Locale testing script
 │   ├── config/
 │   │   └── superset_config.py   # Custom configuration
+│   ├── Dockerfile               # Custom image extension
 │   └── README.md                # This documentation
 ├── docker-compose.yml           # Service orchestration
-├── Dockerfile                   # Base image extension
+├── Dockerfile                   # Base image extension (moved here)
 └── README.md                    # Main documentation (root)
 ```
 

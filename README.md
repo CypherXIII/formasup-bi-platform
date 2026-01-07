@@ -28,7 +28,7 @@ docker compose up -d
 - `init/` - PostgreSQL initialization scripts
 - `migration/` - Data migration scripts
 - `docker-compose.yml` - Service orchestration
-- `Dockerfile` - Custom image
+- `Dockerfile` - Custom image (moved to superset/ folder)
 
 ## 📖 Complete Documentation
 
