@@ -1,0 +1,102 @@
+services:
+  superset:
+    build: ./superset
+    image: superset-fr-formasup-local:latest
+    container_name: superset-fsa
+    restart: always
+    ports:
+      - "8088:8088"
+    environment:
+      DATABASE_URL: "postgresql://superset:superset@superset-db:5432/superset"
+      SUPERSET_SECRET_KEY: "eiJBxyBH2wY/WPoKpAtytlL62pFDOLhu025PNVt0Z5foxRFM+lFUgwvT"
+      PYTHONPATH: "/app/pythonpath"
+      SUPERSET_LOAD_EXAMPLES: "no"
+      # Locales françaises
+      LANG: "fr_FR.UTF-8"
+      LANGUAGE: "fr_FR:fr"
+      LC_ALL: "fr_FR.UTF-8"
+    volumes:
+      - superset_home:/app/superset_home
+      - ./superset/config/superset_config.py:/app/pythonpath/superset_config.py:ro
+      - ./superset/assets/images/logo.png:/app/superset/static/assets/images/logo.png:ro
+      - ./superset/assets/images/favicon.ico:/app/superset/static/assets/images/favicon.ico:ro
+    depends_on:
+      superset-db:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - fsa-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    command: >
+      bash -c "superset db upgrade &&
+        superset fab create-admin --username admin --firstname Admin --lastname User --email admin@fsa.local --password admin 2>/dev/null || true &&
+        superset init &&
+        superset run -h 0.0.0.0 -p 8088"
+
+  postgres:
+    image: postgres:15
+    container_name: postgres-fsa
+    restart: always
+    environment:
+      POSTGRES_DB: FSA
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: F0rm4sup2025!Db#Secure$
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d
+    networks:
+      - fsa-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d FSA" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  superset-db:
+    image: postgres:15
+    container_name: superset-db
+    restart: always
+    environment:
+      POSTGRES_DB: superset
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: superset
+    ports:
+      - "5442:5432"
+    volumes:
+      - superset_db_data:/var/lib/postgresql/data
+    networks:
+      - fsa-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U superset -d superset" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migration:
+    build: ./migration
+    container_name: migration-fsa
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fsa-net
+    volumes:
+      - ./migration:/app
+
+
+networks:
+  fsa-net:
+    driver: bridge
+
+volumes:
+  superset_home:
+  superset_db_data:
+
+
