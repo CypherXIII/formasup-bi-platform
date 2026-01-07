@@ -11,9 +11,8 @@ FormaSup BI is a custom instance of Apache Superset 6.0.0 configured for FormaSu
 ```txt
 postgres_docker/
 ├── init/                        # PostgreSQL init scripts
-├── migration/                   # Data migration scripts
-├── superset/
-│   ├── apache-superset-src/     # Superset source code (tag 6.0.0)
+├── migration/                   # Data migration scripts (Git submodule)
+├── superset/                    # Superset configuration (Git submodule)
 │   ├── assets/
 │   │   ├── images/
 │   │       ├── favicon.ico
@@ -25,7 +24,25 @@ postgres_docker/
 │   │   └── superset_config.py   # Custom configuration
 │   └── Dockerfile               # Custom image extension
 ├── docker-compose.yml           # Service orchestration
+├── .gitmodules                  # Git submodules configuration
 └── README.md                    # This documentation
+```
+
+### Git Submodules
+
+This project uses Git submodules for better organization:
+
+- **`superset/`**: Independent repository containing Superset-specific configurations, assets, and build scripts
+- **`migration/`**: Independent repository containing data migration tools and scripts
+
+To clone with submodules:
+```bash
+git clone --recursive https://github.com/CypherXIII/superset_formasup.git
+```
+
+To update submodules:
+```bash
+git submodule update --remote
 ```
 
 ### Services
