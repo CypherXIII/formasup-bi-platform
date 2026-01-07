@@ -68,10 +68,14 @@ migration/
 ├── db_monitor.py        # Database monitoring utilities
 ├── Dockerfile           # Container definition
 ├── requirements.txt     # Python dependencies
-└── tests/               # Test suite (54 tests)
-    ├── test_migration.py
+├── README.md            # This documentation
+└── tests/               # Test suite
+    ├── __init__.py
+    ├── conftest.py      # Pytest fixtures
+    ├── README.md        # Test documentation
     ├── test_database.py
     ├── test_integration.py
+    ├── test_migration.py
     └── test_utils.py
 ```
 

@@ -84,33 +84,54 @@ formasup-bi-platform/
 ├── run-tests.ps1               # PowerShell test runner
 ├── run-tests.sh                # Bash test runner
 │
-├── init/                       # PostgreSQL initialization scripts
-│   └── *.sql                   # Database schema and initial data
-│
-├── migration/                  # Submodule: formasup-migration-tools
-│   ├── migrate.py             # Main entry point
-│   ├── config.py              # Configuration management
-│   ├── database.py            # Database connections
-│   ├── migration_core.py      # Migration logic
-│   ├── api_enrichment.py      # API data enrichment
-│   ├── tests/                 # Test suite (54 tests)
-│   └── Dockerfile             # Migration container
-│
-├── superset/                   # Submodule: formasup-superset-config
-│   ├── apache-superset-src/   # Superset 6.0.0 with French fix
-│   ├── config/                # Custom configuration
-│   │   └── superset_config.py # Superset settings
-│   ├── docker/                # Docker files
-│   │   └── Dockerfile         # Custom Superset image
-│   ├── locales/               # French translations
-│   ├── scripts/               # Build scripts
-│   ├── assets/                # Logos and branding
-│   └── tests/                 # Test suite (25 tests)
-│
 ├── deploy/                     # VPS deployment resources
-    ├── nginx.conf             # Reverse proxy configuration
-    └── superset.service       # systemd service file
-
+│   ├── nginx.conf              # Reverse proxy configuration
+│   ├── superset.service        # systemd service file
+│   └── README.md               # Deployment documentation
+│
+├── init/                       # PostgreSQL initialization scripts
+│   └── backup_20250731.sql     # Database backup
+│
+├── migration/                  # Data migration tools
+│   ├── migrate.py              # Main entry point
+│   ├── config.py               # Configuration management
+│   ├── database.py             # Database connections
+│   ├── migration_core.py       # Migration logic
+│   ├── api_enrichment.py       # API data enrichment
+│   ├── api_client.py           # Rate-limited API client
+│   ├── cleanup.py              # Data cleaning functions
+│   ├── sync.py                 # Table synchronization
+│   ├── temp_tables.py          # Temporary table management
+│   ├── db_monitor.py           # Database monitoring
+│   ├── logger.py               # Logging configuration
+│   ├── Dockerfile              # Migration container
+│   ├── requirements.txt        # Python dependencies
+│   ├── README.md               # Migration documentation
+│   └── tests/                  # Test suite
+│       ├── conftest.py
+│       ├── test_database.py
+│       ├── test_integration.py
+│       ├── test_migration.py
+│       └── test_utils.py
+│
+└── superset/                   # Superset configuration
+    ├── apache-superset-src/    # Superset 6.0.0 source
+    ├── config/                 # Custom configuration
+    │   └── superset_config.py  # Superset settings
+    ├── docker/                 # Docker files
+    │   └── Dockerfile          # Custom Superset image
+    ├── locales/                # French translations
+    │   └── backup-messages.po  # Translation backup
+    ├── scripts/                # Build scripts
+    │   └── build-superset-fr.ps1
+    ├── assets/                 # Logos and branding
+    │   └── images/
+    │       ├── favicon.ico
+    │       └── logo.png
+    ├── tests/                  # Test suite
+    │   ├── test_config.py
+    │   └── test_build.py
+    └── README.md               # Superset documentation
 ```
 
 ### Services
