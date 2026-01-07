@@ -39,6 +39,7 @@
 ### Phase 2: Containment
 
 **Immediate Actions (P1/P2)**:
+
 ```bash
 # Isolate affected container
 docker stop superset-fsa
@@ -51,6 +52,7 @@ docker logs superset-fsa > /backup/incident_logs_$(date +%Y%m%d).txt
 ```
 
 **Short-term Containment**:
+
 - Disable compromised accounts
 - Revoke exposed credentials
 - Segment network if needed
@@ -63,6 +65,7 @@ docker logs superset-fsa > /backup/incident_logs_$(date +%Y%m%d).txt
 - Identify affected data and users
 
 **Log Locations**:
+
 | Component | Log Location |
 |-----------|--------------|
 | Superset | `docker logs superset-fsa` |
@@ -100,6 +103,7 @@ docker logs superset-fsa > /backup/incident_logs_$(date +%Y%m%d).txt
 **Deadline**: 72 hours after becoming aware of breach
 
 **Required Information**:
+
 - Nature of the breach
 - Categories and number of data subjects affected
 - Categories and number of records affected
@@ -114,6 +118,7 @@ docker logs superset-fsa > /backup/incident_logs_$(date +%Y%m%d).txt
 Required when breach is likely to result in high risk to rights and freedoms.
 
 **Content**:
+
 - Clear description of breach
 - Contact details of DPO
 - Likely consequences

@@ -35,6 +35,7 @@ All AI interactions must respect the following constraints and security requirem
 - **PRESERVE audit trails** for compliance (ISO 27001 A.12.4)
 
 See `security/` folder for detailed policies:
+
 - DATA_CLASSIFICATION.md - Data sensitivity levels
 - ACCESS_CONTROL.md - Access control policy
 - INCIDENT_RESPONSE.md - Incident handling procedures

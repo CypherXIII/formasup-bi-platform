@@ -98,6 +98,7 @@ WHERE date_fin_contrat < NOW() - INTERVAL '5 years';
 ### Backup Deletion Process
 
 When source data expires, corresponding backups must also be:
+
 1. Identified in backup inventory
 2. Scheduled for deletion when backup expires
 3. Verified as deleted
@@ -110,6 +111,7 @@ When source data expires, corresponding backups must also be:
 ### Right to Erasure (Article 17)
 
 **Process**:
+
 1. Receive and log request
 2. Verify identity
 3. Check for legal retention requirements
@@ -117,6 +119,7 @@ When source data expires, corresponding backups must also be:
 5. Respond within 30 days
 
 **Exceptions** (data may be retained):
+
 - Legal obligation (tax, labour law)
 - Public interest archiving
 - Legal claims defense
