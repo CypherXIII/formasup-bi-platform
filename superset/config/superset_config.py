@@ -78,6 +78,7 @@ FILTER_SELECT_ROW_LIMIT = 10000
 # BRANDING
 # =============================================================================
 
+# Legacy branding (kept for compatibility)
 APP_NAME = "FormaSup BI"
 APP_ICON = "/static/assets/images/logo.png"
 LOGO_TARGET_PATH = "/superset/welcome"
@@ -86,6 +87,36 @@ LOGO_RIGHT_TEXT = ""
 
 # Custom favicon
 FAVICONS = [{"href": "/static/assets/images/favicon.ico"}]
+
+# =============================================================================
+# THEMING (Superset 6.0.0+ branding via theme system)
+# =============================================================================
+# In Superset 6.0.0, APP_ICON is deprecated. Branding is now managed through
+# the theming system using THEME_DEFAULT. See: https://github.com/apache/superset/issues/36940
+
+THEME_DEFAULT = {
+    "algorithm": "default",
+    "token": {
+        "brandLogoUrl": "/static/assets/images/logo.png",
+        "brandLogoAlt": "FormaSup BI",
+        "brandLogoHeight": "40px",
+        "brandLogoMargin": "10px 10px 10px 0px",
+        "brandIconMaxWidth": 150,
+        "brandSpinnerUrl": "/static/assets/images/loading.gif",
+    },
+}
+
+THEME_DARK = {
+    "algorithm": "dark",
+    "token": {
+        "brandLogoUrl": "/static/assets/images/logo.png",
+        "brandLogoAlt": "FormaSup BI",
+        "brandLogoHeight": "40px",
+        "brandLogoMargin": "10px 10px 10px 0px",
+        "brandIconMaxWidth": 150,
+        "brandSpinnerUrl": "/static/assets/images/loading.gif",
+    },
+}
 
 # =============================================================================
 # FRENCH LANGUAGE - Main Configuration
