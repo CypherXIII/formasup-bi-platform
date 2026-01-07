@@ -13,19 +13,33 @@ postgres_docker/
 ├── init/                        # PostgreSQL init scripts
 ├── migration/                   # Data migration scripts (Git submodule)
 ├── superset/                    # Superset configuration (Git submodule)
-│   ├── assets/
-│   │   ├── images/
-│   │       ├── favicon.ico
-│   │       └── logo.png
-│   ├── backup-messages.po       # Complete FR translations (backup)
-│   ├── build-superset-fr.ps1    # Automated build script
-│   ├── config/
-│   │   └── superset_config.py   # Custom configuration
-│   └── Dockerfile               # Custom image extension
+│   ├── apache-superset-src/     # Apache Superset 6.0.0 source code
+│   ├── assets/                  # Static resources
+│   │   └── images/              # Logos and favicons
+│   ├── config/                  # Configuration files
+│   │   └── superset_config.py   # Custom Superset configuration
+│   ├── docker/                  # Docker-related files
+│   │   └── Dockerfile           # Custom French Superset image
+│   ├── locales/                 # Translation and localization files
+│   │   └── backup-messages.po   # Complete French translations backup
+│   ├── scripts/                 # Build and automation scripts
+│   │   └── build-superset-fr.ps1 # Automated French build script
+│   └── README.md                # Superset submodule documentation
 ├── docker-compose.yml           # Service orchestration
 ├── .gitmodules                  # Git submodules configuration
 └── README.md                    # This documentation
 ```
+
+### Project Organization
+
+The project follows a **modular and organized structure** for better maintainability:
+
+- **`apache-superset-src/`**: Complete Apache Superset 6.0.0 source code (~43MB)
+- **`assets/`**: Static resources (logos, favicons, images)
+- **`config/`**: Configuration files and custom settings
+- **`docker/`**: Docker-related files and container definitions
+- **`locales/`**: Translation files and localization resources
+- **`scripts/`**: Build scripts, automation, and tooling
 
 ### Git Submodules
 
@@ -75,7 +89,7 @@ cd ../..
 
 ```powershell
 cd superset
-.\build-superset-fr.ps1
+.\scripts\build-superset-fr.ps1
 cd ..
 ```
 
@@ -90,6 +104,16 @@ docker compose up -d
 - URL: <http://localhost:8088>
 - Login: admin
 - Password: admin
+
+### 📁 Updated File Paths
+
+**Important**: File paths have been reorganized for better maintainability:
+
+- **Build script**: `superset/build-superset-fr.ps1` → `superset/scripts/build-superset-fr.ps1`
+- **Translations**: `superset/backup-messages.po` → `superset/locales/backup-messages.po`
+- **Dockerfile**: `superset/Dockerfile` → `superset/docker/Dockerfile`
+
+The `docker-compose.yml` has been updated to reference the new Dockerfile path.
 
 ## French Translations
 
