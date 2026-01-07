@@ -3,4 +3,4 @@
 	url = https://github.com/CypherXIII/formasup-bi-platform.git
 [submodule "migration"]
 	path = migration
-	url = https://github.com/CypherXIII/formasup-data-migration.git
+	url = https://github.com/CypherXIII/formasup-migration-tools.git
