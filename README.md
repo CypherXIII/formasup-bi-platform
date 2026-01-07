@@ -101,7 +101,7 @@ git checkout 6.0.0
 cd ../..
 ```
 
-2. **Build the French image**
+1. **Build the French image**
 
 ```powershell
 cd superset
@@ -109,13 +109,13 @@ cd superset
 cd ..
 ```
 
-3. **Start services**
+1. **Start services**
 
 ```powershell
 docker compose up -d
 ```
 
-4. **Access the application**
+1. **Access the application**
 
 - URL: <http://localhost:8088>
 - Login: admin
@@ -140,15 +140,18 @@ Superset 6.0.0 has a known bug (#35569) that causes a **race condition** in Fren
 ### Applied Solutions
 
 #### 1. Source code fixes
+
 - **Backend** (`superset/views/base.py`): Use `BABEL_DEFAULT_LOCALE` instead of "en" fallback
 - **Frontend** (`superset-frontend/src/preamble.ts`): Wait for language pack loading before React rendering
 
 #### 2. Custom configuration
+
 - `BABEL_DEFAULT_LOCALE = "fr"`
 - `LANGUAGES = {"fr": {"flag": "fr", "name": "Français"}}`
 - Workaround to bypass race condition
 
 #### 3. Translation architecture
+
 - **Backend**: `.po` files → `.mo` (Flask-Babel)
 - **Frontend**: `.po` files → `.json` (jed1.x format)
 
@@ -252,11 +255,13 @@ Edit `superset/config/superset_config.py` to:
 ## Development
 
 ### Repository Structure
+
 - **`formasup-bi-platform`**: Main repository with Docker orchestration
 - **`formasup-data-migration`**: Data migration tools and scripts
 - **`superset/`**: Superset configuration and customizations
 
 ### Contributing
+
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
 3. Make your changes and test them
@@ -265,6 +270,7 @@ Edit `superset/config/superset_config.py` to:
 6. Create a Pull Request
 
 ### Building Custom Images
+
 For development, rebuild the French Superset image after configuration changes:
 
 ```bash
