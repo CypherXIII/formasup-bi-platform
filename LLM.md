@@ -163,7 +163,7 @@ def migrate_table(source: Connection, target: Connection, table: str) -> int:
 
 ### Message Format
 
-```
+``` txt
 <type>: <description>
 
 Types:
@@ -178,7 +178,7 @@ Types:
 
 ### Examples
 
-```
+```txt
 Add: Rate limiting for API client
 Fix: Connection timeout handling
 Docs: Update deployment instructions

@@ -207,7 +207,7 @@ docker compose exec superset bash
 ### Log Files
 
 | Log | Location |
-|-----|----------|
+| ----- | ---------- |
 | Superset | `docker compose logs superset` |
 | PostgreSQL | `docker compose logs postgres` |
 | Nginx Access | `/var/log/nginx/superset_access.log` |

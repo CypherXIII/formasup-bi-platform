@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-green)](https://www.python.org/)
 [![Superset](https://img.shields.io/badge/Superset-6.0.0-orange)](https://superset.apache.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-79%20Passed-brightgreen)]()
+[![Tests](https://img.shields.io/badge/Tests-79%20Passed-brightgreen)](#testing)
 
 ---
 
@@ -75,7 +75,7 @@ A production-ready Business Intelligence platform based on Apache Superset 6.0.0
 
 ## Architecture
 
-```
+```text
 formasup-bi-platform/
 ├── docker-compose.yml          # Service orchestration
 ├── .env.example                # Environment template
@@ -177,7 +177,7 @@ docker compose logs -f superset
 
 ### 4. Access the Application
 
-- **URL**: http://localhost:8088
+- **URL**: <http://localhost:8088>
 - **Username**: admin
 - **Password**: admin
 
@@ -241,12 +241,12 @@ ENABLE_API_ENRICHMENT=false
 
 ### Configuration Files
 
-| File                              | Purpose                          |
-|-----------------------------------|----------------------------------|
-| `docker-compose.yml`              | Service definitions              |
-| `.env`                            | Environment variables            |
-| `superset/config/superset_config.py` | Superset configuration        |
-| `migration/.env`                  | Migration-specific settings      |
+| File                                 | Purpose                     |
+|--------------------------------------|-----------------------------|
+| `docker-compose.yml`                 | Service definitions         |
+| `.env`                               | Environment variables       |
+| `superset/config/superset_config.py` | Superset configuration      |
+| `migration/.env`                     | Migration-specific settings |
 
 ---
 
@@ -287,7 +287,7 @@ See [SECURITY.md](security/SECURITY.md) for vulnerability reporting procedures.
 
 ## VPS Deployment
 
-### Prerequisites
+### Server Requirements
 
 - Ubuntu 22.04 LTS or Debian 12 (recommended)
 - Docker Engine and Docker Compose installed
@@ -514,7 +514,7 @@ docker exec superset-fsa curl http://localhost:8088/health
 
 ### Commit Message Format
 
-```
+```text
 <type>: <description>
 
 Types: Add, Fix, Update, Refactor, Test, Docs, Chore

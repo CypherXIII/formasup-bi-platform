@@ -6,7 +6,7 @@ Write-Host "  FormaSup BI Platform - Test Runner" -ForegroundColor Cyan
 Write-Host "===============================================================" -ForegroundColor Cyan
 
 # Function to run tests for a submodule
-function Run-Tests {
+function Invoke-Tests {
     param(
         [string]$ModuleName,
         [string]$Path
@@ -34,10 +34,10 @@ function Run-Tests {
 }
 
 # Run migration submodule tests
-Run-Tests -ModuleName "Migration" -Path "migration"
+Invoke-Tests -ModuleName "Migration" -Path "migration"
 
 # Run superset submodule tests
-Run-Tests -ModuleName "Superset" -Path "superset"
+Invoke-Tests -ModuleName "Superset" -Path "superset"
 
 Write-Host ""
 Write-Host "===============================================================" -ForegroundColor Cyan
