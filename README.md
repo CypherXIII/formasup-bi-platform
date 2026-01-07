@@ -1,6 +1,6 @@
 # FormaSup BI Platform
 
-> A production-ready Business Intelligence platform based on Apache Superset 6.0.0, with complete French localization and MariaDB to PostgreSQL migration tools.
+> A production-ready Business Intelligence platform based on Apache Superset 6.0.0, with complete French translation and MariaDB to PostgreSQL migration tools.
 
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
 [![Python](https://img.shields.io/badge/Python-3.10+-green)](https://www.python.org/)
@@ -30,12 +30,12 @@
 
 ## Overview
 
-A production-ready Business Intelligence platform based on Apache Superset 6.0.0, with complete French localization and MariaDB to PostgreSQL migration tools. Designed for educational data analysis at FormaSup Auvergne.
+A production-ready Business Intelligence platform based on Apache Superset 6.0.0, with complete French translation and MariaDB to PostgreSQL migration tools. Designed for educational data analysis at FormaSup Auvergne.
 
 **FormaSup BI Platform** is a custom deployment of Apache Superset designed for FormaSup Auvergne and its academic partners (UCA, Clermont School of Business, ISRP). It provides:
 
 - **Business Intelligence dashboards** for educational data analysis
-- **100% French interface** with complete localization (fixing Superset bug #35569)
+- **100% French interface** with complete translation (fixing Superset bug #35569)
 - **Data migration tools** for transferring data from MariaDB to PostgreSQL
 - **Production-ready Docker deployment** with security best practices
 
@@ -53,7 +53,7 @@ A production-ready Business Intelligence platform based on Apache Superset 6.0.0
 ### Core Features
 
 - **Apache Superset 6.0.0**: Full-featured BI platform with SQL Lab, dashboards, and charts
-- **French Localization**: Complete French interface with backend and frontend translations
+- **French translation**: Complete French interface with backend and frontend translations
 - **PostgreSQL Backend**: Two databases (business data + Superset metadata)
 - **Docker Orchestration**: Multi-service deployment with health checks
 

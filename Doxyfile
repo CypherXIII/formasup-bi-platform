@@ -1,6 +1,7 @@
 # Doxyfile for FormaSup BI - Reporting Platform
 
-# Project
+## Project
+
 PROJECT_NAME           = "FormaSup BI - Reporting Platform"
 PROJECT_BRIEF          = "A custom instance of Apache Superset for FormaSup Auvergne and its partners."
 PROJECT_LOGO           = superset/assets/images/logo.png
@@ -8,23 +9,27 @@ OUTPUT_DIRECTORY       = docs/doxygen
 INPUT                  = ./migration ./superset ./README.md
 RECURSIVE              = YES
 
-# Source Code
-FILE_PATTERNS          = *.py *.md
+## Source Code
+
+FILE_PATTERNS          = *.py*.md
 EXTRACT_ALL            = YES
 EXTRACT_PRIVATE        = NO
 EXTRACT_STATIC         = YES
 
-# Output Formats
+## Output Formats
+
 GENERATE_HTML          = YES
 GENERATE_LATEX         = NO
 HTML_OUTPUT            = html
 HTML_FILE_EXTENSION    = .html
 
-# Documentation Content
+## Documentation Content
+
 USE_MDFILE_AS_MAINPAGE = README.md
 JAVADOC_AUTOBRIEF      = YES
 MULTILINE_CPP_IS_BRIEF = YES
 
-# Logging
+## Logging
+
 QUIET                  = YES
 WARN_IF_UNDOCUMENTED   = NO

@@ -11,7 +11,7 @@
 ### Key Characteristics
 
 - **Production system**: Real users depend on this
-- **French localization**: Complete French interface
+- **French translation**: Complete French interface
 - **Security-sensitive**: Contains database credentials configuration
 - **Docker-based**: Multi-container orchestration
 - **Submodule architecture**: Main repo + migration tools + superset config

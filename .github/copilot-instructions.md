@@ -4,7 +4,7 @@
 
 This is a production business intelligence platform for FormaSup Auvergne. The project integrates:
 
-- **Apache Superset 6.0.0** with French localization fix
+- **Apache Superset 6.0.0** with French translation fix
 - **PostgreSQL 15** for data storage
 - **Docker Compose** for orchestration
 - **Python migration tools** for MariaDB to PostgreSQL migration
