@@ -10,17 +10,24 @@ Interface 100% francaise par defaut.
 
 ```txt
 postgres_docker/
-├── apache-superset-src/         # Code source Superset (tag 6.0.0)
 ├── init/                        # Scripts init PostgreSQL
 ├── migration/                   # Scripts de migration
 ├── superset/
-│   └── config/
-│       └── superset_config.py   # Configuration personnalisee
-├── backup-messages.po           # Traductions FR completes (backup)
+│   ├── apache-superset-src/     # Code source Superset (tag 6.0.0)
+│   ├── assets/
+│   │   ├── images/
+│   │       ├── favicon.ico
+│   │       └── logo.png
+│   ├── backup-messages.po       # Traductions FR completes (backup)
+│   ├── check_locale.py          # Script de test des locales
+│   ├── config/
+│   │   └── superset_config.py   # Configuration personnalisee
+│   ├── README-traductions-francaises.md  # Documentation traductions
+│   └── README.md                # Documentation projet
 ├── build-superset-fr.ps1        # Script de build automatise
 ├── docker-compose.yml           # Orchestration des services
 ├── Dockerfile                   # Extension de l'image de base
-└── README.md                    # Documentation
+└── README.md                    # Documentation principale
 ```
 
 ### Services
@@ -44,10 +51,10 @@ postgres_docker/
 1. **Cloner le depot Superset**
 
 ```powershell
-git clone https://github.com/apache/superset.git apache-superset-src
-cd apache-superset-src
+git clone https://github.com/apache/superset.git superset/apache-superset-src
+cd superset/apache-superset-src
 git checkout 6.0.0
-cd ..
+cd ../..
 ```
 
 1. **Construire l'image francaise**

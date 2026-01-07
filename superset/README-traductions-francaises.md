@@ -123,7 +123,7 @@ Superset utilise deux systèmes de traduction :
 
 ### 1. Build de l'image de base
 ```bash
-cd apache-superset-src
+cd superset/apache-superset-src
 docker build --build-arg BUILD_TRANSLATIONS=true -t superset-fr-formasup:latest --target lean .
 ```
 
