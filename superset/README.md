@@ -19,14 +19,14 @@ postgres_docker/
 │   │       ├── favicon.ico
 │   │       └── logo.png
 │   ├── backup-messages.po       # Traductions FR complètes (backup)
+│   ├── build-superset-fr.ps1    # Script de build automatisé
 │   ├── check_locale.py          # Script de test des locales
 │   ├── config/
 │   │   └── superset_config.py   # Configuration personnalisée
 │   └── README.md                # Cette documentation
-├── build-superset-fr.ps1        # Script de build automatisé
 ├── docker-compose.yml           # Orchestration des services
 ├── Dockerfile                   # Extension de l'image de base
-└── README.md                    # Documentation principale
+└── README.md                    # Documentation principale (racine)
 ```
 
 ### Services
@@ -59,7 +59,9 @@ cd ../..
 2. **Construire l'image française**
 
 ```powershell
+cd superset
 .\build-superset-fr.ps1
+cd ..
 ```
 
 3. **Démarrer les services**
@@ -131,7 +133,9 @@ docker exec superset-db pg_dump -U superset superset > backup_superset.sql
 ### Reconstruire l'image
 
 ```powershell
+cd superset
 .\build-superset-fr.ps1
+cd ..
 docker compose up -d
 ```
 
@@ -154,7 +158,7 @@ docker logs superset-fsa | grep -i "language\|traduction\|fr"
 
 1. Vider le cache navigateur (Ctrl+Shift+Suppr)
 2. Vérifier l'image : `docker images superset-fr-formasup`
-3. Reconstruire : `.\build-superset-fr.ps1`
+3. Reconstruire : `cd superset && .\build-superset-fr.ps1 && cd ..`
 
 ### Erreur de connexion
 

@@ -32,7 +32,7 @@ Write-Host "===============================================================" -Fo
 Write-Host ""
 
 $SCRIPT_DIR = $PSScriptRoot
-$SUPERSET_SRC = Join-Path $SCRIPT_DIR "superset\apache-superset-src"
+$SUPERSET_SRC = Join-Path $SCRIPT_DIR "apache-superset-src"
 
 # Verifier que le repertoire existe
 if (-not (Test-Path $SUPERSET_SRC)) {
