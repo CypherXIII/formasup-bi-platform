@@ -18,15 +18,15 @@ This is a production business intelligence platform for FormaSup Auvergne. The p
 3. **All commit messages MUST be in English**
 4. **NO emojis anywhere in code or documentation**
 
-### Security Requirements (ISO 27001 / RGPD)
+### Security Requirements
 
-1. **NEVER hardcode secrets or credentials** (ISO 27001 A.9)
-2. **Always use environment variables for sensitive data** (ISO 27001 A.9)
-3. **Maintain CSRF protection in Superset configuration** (OWASP)
-4. **Validate all user inputs in migration scripts** (OWASP, RGPD Art. 32)
-5. **Use parameterized queries for database operations** (SQL Injection prevention)
-6. **Log security-relevant events** for audit trail (ISO 27001 A.12)
-7. **Consider data retention requirements** when handling personal data (RGPD Art. 5)
+1. **NEVER hardcode secrets or credentials** 
+2. **Always use environment variables for sensitive data**
+3. **Maintain CSRF protection in Superset configuration** 
+4. **Validate all user inputs in migration scripts**
+5. **Use parameterized queries for database operations**
+6. **Log security-relevant events**
+7. **Consider data retention requirements** 
 
 ### Architecture Constraints
 
