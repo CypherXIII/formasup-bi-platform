@@ -1,0 +1,49 @@
+# Dependabot configuration for FormaSup BI Platform
+# Documentation: https://docs.github.com/en/code-security/dependabot
+
+version: 2
+updates:
+  # Python dependencies for migration tools
+  - package-ecosystem: "pip"
+    directory: "/migration"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "Chore"
+    labels:
+      - "dependencies"
+      - "security"
+
+  # Docker base images for Superset
+  - package-ecosystem: "docker"
+    directory: "/superset/docker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "Chore"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # Docker base images for migration
+  - package-ecosystem: "docker"
+    directory: "/migration"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "Chore"
+    labels:
+      - "dependencies"
+      - "docker"

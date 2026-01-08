@@ -86,4 +86,6 @@ superset_home/
 
 # Database dumps
 *.sql
-!init/*.sql
+
+# Database initialization files (contain sensitive data)
+init/*.sql

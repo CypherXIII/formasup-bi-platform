@@ -1,0 +1,21 @@
+# CODEOWNERS - Define code ownership for automatic review assignment
+# Documentation: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repository
+* @CypherXIII
+
+# Critical configuration files - require explicit review
+docker-compose.yml @CypherXIII
+docker-compose.prod.yml @CypherXIII
+superset/config/superset_config.py @CypherXIII
+
+# Security-sensitive files
+.github/ @CypherXIII
+.env* @CypherXIII
+
+# Database and migration scripts
+init/ @CypherXIII
+migration/ @CypherXIII
+
+# Deployment configuration
+deploy/ @CypherXIII

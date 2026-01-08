@@ -1,0 +1,130 @@
+# Continuous Integration Workflow
+# Runs tests on all pull requests and pushes to main branch
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-migration:
+    name: Migration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: "migration/requirements.txt"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r migration/requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run migration tests
+        run: |
+          cd migration
+          pytest tests/ -v --cov=. --cov-report=xml --cov-fail-under=80
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          file: migration/coverage.xml
+          flags: migration
+          fail_ci_if_error: false
+
+  test-superset:
+    name: Superset Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: "superset/requirements-dev.txt"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r superset/requirements-dev.txt
+
+      - name: Run superset tests
+        run: |
+          cd superset
+          pytest tests/ -v --cov=. --cov-report=xml --cov-fail-under=85
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          file: superset/coverage.xml
+          flags: superset
+          fail_ci_if_error: false
+
+  lint:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install linters
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black isort
+
+      - name: Check formatting with Black
+        run: black --check --diff migration/ superset/tests/
+
+      - name: Check import sorting with isort
+        run: isort --check-only --diff migration/ superset/tests/
+
+      - name: Lint with flake8
+        run: flake8 migration/ superset/tests/ --max-line-length=120
+
+  security-check:
+    name: Security Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit safety
+
+      - name: Run Bandit security linter
+        run: bandit -r migration/ -ll -ii
+
+      - name: Check dependencies for vulnerabilities
+        run: safety check -r migration/requirements.txt --full-report
+        continue-on-error: true
