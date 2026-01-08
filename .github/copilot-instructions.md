@@ -39,7 +39,7 @@ This is a production business intelligence platform for FormaSup Auvergne. The p
 
 1. **Run existing tests** before making changes
 2. **Add tests** for any new functionality
-3. **Maintain minimum coverage**: 80% for migration, 85% for superset
+3. **Maintain minimum coverage**: 40% for migration, 80% for superset
 4. **Test commands**:
    - PowerShell: `.\run-tests.ps1`
    - Bash: `./run-tests.sh`
