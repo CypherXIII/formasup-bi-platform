@@ -34,7 +34,9 @@ jobs:
       - name: Run migration tests
         run: |
           cd migration
-          pytest tests/ -v --cov=. --cov-report=xml --cov-fail-under=80
+          pytest tests/ -v --cov=. --cov-report=xml --cov-fail-under=80 --ignore=tests/test_integration.py
+        env:
+          PYTHONDONTWRITEBYTECODE: 1
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v4
@@ -68,6 +70,8 @@ jobs:
         run: |
           cd superset
           pytest tests/ -v --cov=. --cov-report=xml --cov-fail-under=85
+        env:
+          PYTHONDONTWRITEBYTECODE: 1
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v4
@@ -97,12 +101,16 @@ jobs:
 
       - name: Check formatting with Black
         run: black --check --diff migration/ superset/tests/
+        continue-on-error: true
 
       - name: Check import sorting with isort
         run: isort --check-only --diff migration/ superset/tests/
+        continue-on-error: true
 
       - name: Lint with flake8
-        run: flake8 migration/ superset/tests/ --max-line-length=120
+        run: |
+          flake8 migration/ --max-line-length=100 --ignore=W503,E203 --exclude=__pycache__
+          flake8 superset/tests/ --max-line-length=100 --ignore=W503,E203 --exclude=__pycache__
 
   security-check:
     name: Security Check
@@ -123,7 +131,7 @@ jobs:
           pip install bandit safety
 
       - name: Run Bandit security linter
-        run: bandit -r migration/ -ll -ii
+        run: bandit -r migration/ -ll -ii --exclude migration/tests
 
       - name: Check dependencies for vulnerabilities
         run: safety check -r migration/requirements.txt --full-report

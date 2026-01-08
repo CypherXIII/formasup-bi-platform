@@ -90,7 +90,8 @@ def process_data(input_data: dict) -> Optional[str]:
 ## File Structure Guidelines
 
 ```
-postgres_docker/
+formasup-bi-platform/
+├── .github/            # GitHub automation (CI, Dependabot)
 ├── migration/          # Migration tools (Python)
 │   ├── tests/         # Migration tests
 │   └── logs/          # Migration logs (gitignored)
@@ -98,8 +99,9 @@ postgres_docker/
 │   ├── config/        # Superset Python config
 │   ├── assets/        # Custom assets
 │   └── tests/         # Superset tests
-├── init/               # Database initialization
-└── apache-superset-src/ # DO NOT MODIFY (source code)
+├── init/               # Database initialization (gitignored)
+├── deploy/             # Deployment configuration
+└── superset/apache-superset-src/ # DO NOT MODIFY (source code)
 ```
 
 ## Allowed Modifications
