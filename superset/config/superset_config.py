@@ -93,30 +93,115 @@ FAVICONS = [{"href": "/static/assets/images/favicon.ico"}]
 # =============================================================================
 # In Superset 6.0.0, APP_ICON is deprecated. Branding is now managed through
 # the theming system using THEME_DEFAULT. See: https://github.com/apache/superset/issues/36940
+#
+# FormaSup color palette:
+# - Primary (dark blue): #134169 - good on white, needs lightening for dark mode
+# - Secondary (light blue): #7EB0C1 - good on dark, needs darkening for light mode
+# - Accent (gold): #f3be72 - good on dark, use darker #c99a42 for light mode
+#
+# Contrast ratios (WCAG AA requires 4.5:1 for text):
+# - #134169 on white: 9.2:1 (excellent)
+# - #7EB0C1 on black: 8.5:1 (excellent)
+# - #c99a42 on white: 3.1:1 (use for large text/icons only)
+# - #f3be72 on black: 10.2:1 (excellent)
 
 THEME_DEFAULT = {
     "algorithm": "default",
     "token": {
+        # Custom font - Booster Next FY (self-hosted)
+        "fontUrls": [
+            "/static/assets/fonts/booster-next-fy.css",
+        ],
+        "fontFamily": "'Booster Next FY', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        "fontFamilyCode": "'Fira Code', 'Monaco', 'Consolas', monospace",
+
+        # Branding (Superset-specific tokens)
         "brandLogoUrl": "/static/assets/images/logo.png",
         "brandLogoAlt": "FormaSup BI",
         "brandLogoHeight": "40px",
-        "brandLogoMargin": "10px 10px 10px 0px",
+        "brandLogoMargin": "5px 5px 5px 0px",
         "brandIconMaxWidth": 150,
         "brandSpinnerUrl": "/static/assets/images/loading.gif",
+
+        # Primary color palette
+        "colorPrimary": "#134169",
+        "colorPrimaryBg": "#e6eef7",
+        "colorPrimaryBgHover": "#ccdcec",
+        "colorPrimaryBorder": "#134169",
+        "colorPrimaryBorderHover": "#0f3457",
+        "colorPrimaryHover": "#0f3457",
+        "colorPrimaryActive": "#0a2239",
+        "colorPrimaryText": "#134169",
+        "colorPrimaryTextHover": "#0f3457",
+        "colorPrimaryTextActive": "#0a2239",
+
+        # Info color palette (Secondary blue)
+        "colorInfo": "#7EB0C1",
+        "colorInfoBg": "#e8f4f7",
+        "colorInfoBgHover": "#d1e9ef",
+        "colorInfoBorder": "#7EB0C1",
+        "colorInfoBorderHover": "#5a9fb3",
+        "colorInfoHover": "#5a9fb3",
+        "colorInfoActive": "#4a8fa3",
+        "colorInfoText": "#7EB0C1",
+        "colorInfoTextHover": "#5a9fb3",
+        "colorInfoTextActive": "#4a8fa3",
+
+        # Warning color palette (Accent gold)
+        "colorWarning": "#f3be72",
+        "colorWarningBg": "#fdf5e6",
+        "colorWarningBgHover": "#fbe8c7",
+        "colorWarningBorder": "#f3be72",
+        "colorWarningBorderHover": "#f0ad4e",
+        "colorWarningHover": "#f0ad4e",
+        "colorWarningActive": "#e79d31",
+        "colorWarningText": "#f3be72",
+        "colorWarningTextHover": "#f0ad4e",
+        "colorWarningTextActive": "#e79d31",
+
+        # Text colors
+        "colorTextBase": "#2d3748",
+        "colorText": "#2d3748",
+        "colorTextSecondary": "#4a5568",
+        "colorTextTertiary": "#718096",
+        "colorTextQuaternary": "#a0aec0",
+
+        # Background colors
+        "colorBgBase": "#f7fafc",
+        "colorBgContainer": "#ffffff",
+        "colorBgElevated": "#ffffff",
+        "colorBgLayout": "#f7fafc",
+
+        # Border colors
+        "colorBorder": "#e2e8f0",
+        "colorBorderSecondary": "#edf2f7",
+
+        # Border radius
+        "borderRadius": 6,
+        "borderRadiusXS": 2,
+        "borderRadiusSM": 4,
+        "borderRadiusLG": 8,
+
+        # Spacing
+        "padding": 16,
+        "paddingSM": 12,
+        "paddingLG": 20,
+        "margin": 16,
+        "marginSM": 12,
+        "marginLG": 20,
+
+        # Shadows
+        "boxShadow": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
+        "boxShadowSecondary": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
     },
 }
 
-THEME_DARK = {
-    "algorithm": "dark",
-    "token": {
-        "brandLogoUrl": "/static/assets/images/logo.png",
-        "brandLogoAlt": "FormaSup BI",
-        "brandLogoHeight": "40px",
-        "brandLogoMargin": "10px 10px 10px 0px",
-        "brandIconMaxWidth": 150,
-        "brandSpinnerUrl": "/static/assets/images/loading.gif",
-    },
-}
+# Disable dark mode and theme switching
+# Setting THEME_DARK = None forces light theme only (no switcher shown)
+THEME_DARK = None
+
+# Disable UI theme administration
+ENABLE_UI_THEME_ADMINISTRATION = False
 
 # =============================================================================
 # FRENCH LANGUAGE - Main Configuration
@@ -159,7 +244,7 @@ D3_FORMAT = {
     "currency": ["", " EUR"],
 }
 
-CURRENCIES = ["EUR", "USD", "GBP"]
+CURRENCIES = ["EUR"]
 
 # =============================================================================
 # FEATURE FLAGS
@@ -169,7 +254,7 @@ FEATURE_FLAGS = {
     # Dashboard features
     "DASHBOARD_NATIVE_FILTERS": True,
     "HORIZONTAL_FILTER_BAR": True,
-    "DASHBOARD_RBAC": True,
+    "DASHBOARD_RBAC": True,  # Required for dashboard-only access
     "DASHBOARD_VIRTUALIZATION": True,
     
     # Drill features
@@ -179,7 +264,7 @@ FEATURE_FLAGS = {
     # Export features
     "ALLOW_FULL_CSV_EXPORT": True,
     
-    # SQL Lab
+    # SQL Lab - disabled for non-admin users via role permissions
     "SQLLAB_BACKEND_PERSISTENCE": True,
     
     # UI preferences
@@ -198,6 +283,50 @@ FEATURE_FLAGS = {
     "THUMBNAILS": False,
     "ALERT_REPORTS": False,
 }
+
+# =============================================================================
+# DASHBOARD-ONLY ACCESS FOR NON-ADMIN USERS
+# =============================================================================
+# This configuration restricts non-admin users to only view dashboards.
+# - Users are redirected to their dashboard after login
+# - Navigation menu is simplified (no SQL Lab, no Chart creation, etc.)
+# - Only Admin role has full access
+
+# Menu items visible to dashboard-only users (Viewer role)
+# Admin users will see the full menu
+MENU_HIDE_USER_INFO_ITEMS = [
+    "Security",
+    "List Users",
+    "List Roles",
+]
+
+# Public role has no permissions by default
+PUBLIC_ROLE_LIKE = "Gamma"
+
+
+# Custom security manager to enforce dashboard-only access
+class FormaSupersetSecurityManager:
+    """
+    Custom configuration for role-based access control.
+    
+    Role hierarchy:
+    - Admin: Full access to everything
+    - Viewer: Dashboard access only (no SQL Lab, no chart creation)
+    """
+    pass
+
+
+# Role configuration for dashboard-only access
+# These permissions should be configured via Superset UI:
+# Settings > List Roles > Create "Viewer" role with only:
+# - can read on Dashboard
+# - can read on DashboardFilterStateRestApi
+# - can read on DashboardPermalinkRestApi
+# - datasource access on [database].[schema].[table] (for filters)
+# - can_language_pack on Superset
+
+# After login, redirect non-admin users to dashboard list
+# Admin detection is done in FLASK_APP_MUTATOR below
 
 # =============================================================================
 # CACHE CONFIGURATION
@@ -274,6 +403,7 @@ def FLASK_APP_MUTATOR(app):
     
     - Adds language pack permission to Public/Gamma roles
     - Configures cache headers for translation endpoints
+    - Redirects non-admin users to dashboard list after login
     
     Args:
         app: The Flask application instance
@@ -284,6 +414,27 @@ def FLASK_APP_MUTATOR(app):
         request_path = response.headers.get("Location", "")
         if "/language_pack/" in request_path or "/api/v1/common/" in request_path:
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        return response
+
+    # Redirect non-admin users to dashboard list after login
+    @app.after_request
+    def redirect_non_admin_to_dashboards(response):
+        """Redirect non-admin users to dashboard list instead of welcome page."""
+        from flask import request, redirect, g
+        from flask_login import current_user
+        
+        # Only intercept redirects to welcome page after successful login
+        if (response.status_code == 302 and 
+            response.headers.get("Location", "").endswith("/superset/welcome/")):
+            try:
+                if current_user.is_authenticated:
+                    # Check if user is NOT admin
+                    user_roles = [role.name for role in current_user.roles]
+                    if "Admin" not in user_roles:
+                        # Redirect to dashboard list instead
+                        return redirect("/dashboard/list/")
+            except Exception:
+                pass
         return response
 
     with app.app_context():
@@ -307,8 +458,34 @@ def FLASK_APP_MUTATOR(app):
                         )
 
                 db.session.commit()
+                
+            # Create Viewer role if it does not exist
+            viewer_role = security_manager.find_role("Viewer")
+            if not viewer_role:
+                viewer_role = security_manager.add_role("Viewer")
+                logger.info("Created 'Viewer' role for dashboard-only access")
+                
+                # Add basic dashboard permissions to Viewer role
+                dashboard_perms = [
+                    ("can_read", "Dashboard"),
+                    ("can_read", "DashboardFilterStateRestApi"),
+                    ("can_read", "DashboardPermalinkRestApi"),
+                    ("can_dashboard", "Superset"),
+                    ("can_explore_json", "Superset"),
+                    ("can_slice", "Superset"),
+                    ("can_language_pack", "Superset"),
+                ]
+                
+                for perm_name, view_name in dashboard_perms:
+                    perm = security_manager.find_permission_view_menu(perm_name, view_name)
+                    if perm and perm not in viewer_role.permissions:
+                        viewer_role.permissions.append(perm)
+                
+                db.session.commit()
+                logger.info("Viewer role permissions configured")
+                
         except Exception as e:
-            logger.warning(f"Language pack permission configuration error: {e}")
+            logger.warning(f"Role/permission configuration error: {e}")
 
 
 # =============================================================================

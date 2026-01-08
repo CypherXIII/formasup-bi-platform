@@ -22,6 +22,7 @@ services:
       - ./superset/config/superset_config.py:/app/pythonpath/superset_config.py:ro
       - ./superset/assets/images/logo.png:/app/superset/static/assets/images/logo.png:ro
       - ./superset/assets/images/favicon.ico:/app/superset/static/assets/images/favicon.ico:ro
+      - ./superset/assets/fonts:/app/superset/static/assets/fonts:ro
     depends_on:
       superset-db:
         condition: service_healthy
