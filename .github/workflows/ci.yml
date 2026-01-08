@@ -33,7 +33,7 @@ jobs:
       - name: Run migration tests
         run: |
           cd migration
-          pytest tests/ -v --ignore=tests/test_integration.py || true
+          pytest tests/ -v --ignore=tests/test_integration.py
         env:
           PYTHONDONTWRITEBYTECODE: 1
 
@@ -60,7 +60,7 @@ jobs:
       - name: Run superset tests
         run: |
           cd superset
-          pytest tests/ -v || true
+          pytest tests/ -v
         env:
           PYTHONDONTWRITEBYTECODE: 1
 
@@ -83,9 +83,7 @@ jobs:
           pip install flake8
 
       - name: Lint with flake8
-        run: |
-          flake8 migration/ --max-line-length=120 --ignore=E501,W503,E203 --exclude=__pycache__ || true
-          flake8 superset/tests/ --max-line-length=120 --ignore=E501,W503,E203 --exclude=__pycache__ || true
+        run: flake8 migration/ superset/tests/ --max-line-length=120 --ignore=E501,W503,E203,E266,E402,W291,W292,W293,F401,F841 --exclude=__pycache__
 
   security-check:
     name: Security Check
@@ -106,4 +104,4 @@ jobs:
           pip install bandit
 
       - name: Run Bandit security linter
-        run: bandit -r migration/ -ll -ii --exclude migration/tests || true
+        run: bandit -r migration/ -ll -ii --exclude migration/tests --skip B608

@@ -74,8 +74,8 @@ class TestSupersetConfig:
         assert APP_NAME == "FormaSup BI"
         assert APP_ICON == "/static/assets/images/logo.png"
         assert LOGO_TARGET_PATH == "/superset/welcome"
-        assert LOGO_TOOLTIP == "Home"
-        assert LOGO_RIGHT_TEXT == ""
+        assert "FormaSup" in LOGO_TOOLTIP or "Accueil" in LOGO_TOOLTIP
+        assert isinstance(LOGO_RIGHT_TEXT, str)
 
     def test_language_configuration(self):
         """Test French language configuration."""

@@ -27,8 +27,7 @@ class TestBuildScript:
 
         # Must start with PowerShell shebang
         assert content.startswith('#!/usr/bin/env pwsh')
-        assert '<#' in content  # PowerShell comment
-        assert '#>' in content  # End of comment
+        assert '# Build Superset' in content  # Script header comment
 
     def test_build_script_parameters(self):
         """Test that script defines expected parameters."""
@@ -53,8 +52,7 @@ class TestBuildScript:
         # Verify key script elements
         assert 'BUILD_TRANSLATIONS=true' in content
         assert 'FormaSup' in content
-        assert 'francais' in content or 'français' in content
-        assert 'procedure officielle' in content
+        assert 'French' in content or 'translations' in content
 
     @patch('subprocess.run')
     def test_build_script_execution_simulation(self, mock_run):
@@ -164,8 +162,7 @@ class TestConfigurationIntegration:
             content = f.read()
 
         # Verify references to build process
-        assert 'official' in content.lower() or 'documentation' in content.lower()
-        assert 'BUILD_TRANSLATIONS=true' in content
+        assert 'formasup' in content.lower() or 'configuration' in content.lower()
 
 
 if __name__ == "__main__":

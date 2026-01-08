@@ -124,12 +124,13 @@ THEME_DARK = {
 
 # Single language = no selector, French forced
 LANGUAGES = {
-    "fr": {"flag": "fr", "name": "Francais"},
+    "fr": {"flag": "fr", "name": "Français"},
 }
 
 # Babel configuration
 BABEL_DEFAULT_LOCALE = "fr"
 BABEL_DEFAULT_FOLDER = "superset/translations"
+BABEL_DEFAULT_TIMEZONE = "Europe/Paris"
 
 # =============================================================================
 # FRENCH DATE/NUMBER FORMATS (D3.js localization)
