@@ -1,8 +1,0 @@
-# CODEOWNERS - Define code ownership for automatic review assignment
-# Documentation: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
-
-# Solo project - CODEOWNERS used for documentation purposes only
-# Review requirements should be disabled in repository rules for solo workflow
-
-# Default owner for everything in the repository
-* @CypherXIII
