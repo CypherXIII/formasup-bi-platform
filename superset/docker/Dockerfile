@@ -1,6 +1,6 @@
 # FormaSup BI - Image Superset francisee
 # Base: superset-fr-formasup:latest (construite avec build-superset-fr.ps1)
-# 
+#
 # L'image de base contient deja:
 # - Les traductions compilees (.mo pour backend, .json pour frontend)
 # - Superset 6.0.0 complet
@@ -43,16 +43,18 @@ ENV LANG=fr_FR.UTF-8
 ENV LANGUAGE=fr_FR:fr
 ENV LC_ALL=fr_FR.UTF-8
 
-# Creer les repertoires necessaires pour les assets
+# Create necessary directories for assets
 RUN mkdir -p /app/superset/static/assets/images/ && \
+    mkdir -p /app/superset/static/assets/fonts/ && \
     chown -R superset:superset /app/superset/static/assets/ && \
     chmod -R 755 /app/superset/static/assets/
 
-# Copier les assets personnalises (logo et favicon)
+# Copy custom assets (logo, favicon and fonts)
 COPY assets/images/logo.png /app/superset/static/assets/images/logo.png
 COPY assets/images/favicon.ico /app/superset/static/assets/images/favicon.ico
-RUN chown superset:superset /app/superset/static/assets/images/logo.png && \
-    chown superset:superset /app/superset/static/assets/images/favicon.ico
+COPY assets/fonts/ /app/superset/static/assets/fonts/
+RUN chown -R superset:superset /app/superset/static/assets/images/ && \
+    chown -R superset:superset /app/superset/static/assets/fonts/
 
 # Copier la configuration personnalisee
 COPY config/superset_config.py /app/pythonpath/

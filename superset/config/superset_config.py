@@ -82,7 +82,7 @@ FILTER_SELECT_ROW_LIMIT = 10000
 APP_NAME = "FormaSup BI"
 APP_ICON = "/static/assets/images/logo.png"
 LOGO_TARGET_PATH = "/superset/welcome"
-LOGO_TOOLTIP = "Accueil FormaSup BI"
+LOGO_TOOLTIP = "Accueil"
 LOGO_RIGHT_TEXT = ""
 
 # Custom favicon
@@ -125,8 +125,8 @@ THEME_DEFAULT = {
 
         # Primary color palette
         "colorPrimary": "#134169",
-        "colorPrimaryBg": "#e6eef7",
-        "colorPrimaryBgHover": "#ccdcec",
+        "colorPrimaryBg": "#e8f4f7",
+        "colorPrimaryBgHover": "#d1e9ef",
         "colorPrimaryBorder": "#134169",
         "colorPrimaryBorderHover": "#0f3457",
         "colorPrimaryHover": "#0f3457",
@@ -161,20 +161,20 @@ THEME_DEFAULT = {
 
         # Text colors
         "colorTextBase": "#2d3748",
-        "colorText": "#2d3748",
+        "colorText": "#134169",
         "colorTextSecondary": "#4a5568",
         "colorTextTertiary": "#718096",
         "colorTextQuaternary": "#a0aec0",
 
         # Background colors
-        "colorBgBase": "#f7fafc",
+        "colorBgBase": "#ffffff",
         "colorBgContainer": "#ffffff",
         "colorBgElevated": "#ffffff",
-        "colorBgLayout": "#f7fafc",
+        "colorBgLayout": "#ffffff",
 
         # Border colors
-        "colorBorder": "#e2e8f0",
-        "colorBorderSecondary": "#edf2f7",
+        "colorBorder": "#7EB0C1",
+        "colorBorderSecondary": "#7EB0C1",
 
         # Border radius
         "borderRadius": 6,
@@ -256,26 +256,26 @@ FEATURE_FLAGS = {
     "HORIZONTAL_FILTER_BAR": True,
     "DASHBOARD_RBAC": True,  # Required for dashboard-only access
     "DASHBOARD_VIRTUALIZATION": True,
-    
+
     # Drill features
     "DRILL_TO_DETAIL": True,
     "DRILL_BY": True,
-    
+
     # Export features
     "ALLOW_FULL_CSV_EXPORT": True,
-    
+
     # SQL Lab - disabled for non-admin users via role permissions
     "SQLLAB_BACKEND_PERSISTENCE": True,
-    
+
     # UI preferences
     "LISTVIEWS_DEFAULT_CARD_VIEW": True,
     "DATAPANEL_CLOSED_BY_DEFAULT": False,
     "FILTERBAR_CLOSED_BY_DEFAULT": False,
-    
+
     # Security
     "EMBEDDABLE_CHARTS": False,
     "EMBEDDED_SUPERSET": False,
-    
+
     # Advanced features (disabled by default)
     "ENABLE_TEMPLATE_PROCESSING": False,
     "ENABLE_JAVASCRIPT_CONTROLS": False,
@@ -308,7 +308,7 @@ PUBLIC_ROLE_LIKE = "Gamma"
 class FormaSupersetSecurityManager:
     """
     Custom configuration for role-based access control.
-    
+
     Role hierarchy:
     - Admin: Full access to everything
     - Viewer: Dashboard access only (no SQL Lab, no chart creation)
@@ -365,19 +365,19 @@ DATA_CACHE_CONFIG = {
 def COMMON_BOOTSTRAP_OVERRIDES_FUNC(bootstrap_data: dict) -> dict:
     """
     Workaround for the partial translations bug in Superset 6.0.0.
-    
+
     Loads the French language pack directly into the bootstrap data
     to avoid the race condition of asynchronous loading.
-    
+
     Args:
         bootstrap_data: The bootstrap data dictionary
-        
+
     Returns:
         Modified bootstrap data with language pack included
     """
     try:
         from superset.translations.utils import get_language_pack
-        
+
         locale = bootstrap_data.get("common", {}).get("locale", "fr")
         if locale == "fr":
             language_pack = get_language_pack("fr")
@@ -388,7 +388,7 @@ def COMMON_BOOTSTRAP_OVERRIDES_FUNC(bootstrap_data: dict) -> dict:
                 logger.info("French language pack loaded via bootstrap override")
     except Exception as e:
         logger.warning(f"Error loading language pack: {e}")
-    
+
     return bootstrap_data
 
 
@@ -400,11 +400,11 @@ def COMMON_BOOTSTRAP_OVERRIDES_FUNC(bootstrap_data: dict) -> dict:
 def FLASK_APP_MUTATOR(app):
     """
     Custom Flask app configuration.
-    
+
     - Adds language pack permission to Public/Gamma roles
     - Configures cache headers for translation endpoints
     - Redirects non-admin users to dashboard list after login
-    
+
     Args:
         app: The Flask application instance
     """
@@ -422,9 +422,9 @@ def FLASK_APP_MUTATOR(app):
         """Redirect non-admin users to dashboard list instead of welcome page."""
         from flask import request, redirect, g
         from flask_login import current_user
-        
+
         # Only intercept redirects to welcome page after successful login
-        if (response.status_code == 302 and 
+        if (response.status_code == 302 and
             response.headers.get("Location", "").endswith("/superset/welcome/")):
             try:
                 if current_user.is_authenticated:
@@ -458,13 +458,13 @@ def FLASK_APP_MUTATOR(app):
                         )
 
                 db.session.commit()
-                
+
             # Create Viewer role if it does not exist
             viewer_role = security_manager.find_role("Viewer")
             if not viewer_role:
                 viewer_role = security_manager.add_role("Viewer")
                 logger.info("Created 'Viewer' role for dashboard-only access")
-                
+
                 # Add basic dashboard permissions to Viewer role
                 dashboard_perms = [
                     ("can_read", "Dashboard"),
@@ -475,15 +475,15 @@ def FLASK_APP_MUTATOR(app):
                     ("can_slice", "Superset"),
                     ("can_language_pack", "Superset"),
                 ]
-                
+
                 for perm_name, view_name in dashboard_perms:
                     perm = security_manager.find_permission_view_menu(perm_name, view_name)
                     if perm and perm not in viewer_role.permissions:
                         viewer_role.permissions.append(perm)
-                
+
                 db.session.commit()
                 logger.info("Viewer role permissions configured")
-                
+
         except Exception as e:
             logger.warning(f"Role/permission configuration error: {e}")
 
