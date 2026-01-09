@@ -1,10 +1,10 @@
 /*
- * Booster Next FY - Custom Font for FormaSup BI
+ * BoosterNextFY - Custom Font for FormaSup BI
  * Self-hosted OTF fonts
  */
 
 @font-face {
-    font-family: 'Booster Next FY';
+    font-family: 'BoosterNextFY';
     src: url('/static/assets/fonts/BoosterNextFY-Thin.otf') format('opentype');
     font-weight: 100;
     font-style: normal;
@@ -12,7 +12,7 @@
 }
 
 @font-face {
-    font-family: 'Booster Next FY';
+    font-family: 'BoosterNextFY';
     src: url('/static/assets/fonts/BoosterNextFY-Light.otf') format('opentype');
     font-weight: 300;
     font-style: normal;
@@ -20,7 +20,7 @@
 }
 
 @font-face {
-    font-family: 'Booster Next FY';
+    font-family: 'BoosterNextFY';
     src: url('/static/assets/fonts/BoosterNextFY-Regular.otf') format('opentype');
     font-weight: 400;
     font-style: normal;
@@ -28,7 +28,7 @@
 }
 
 @font-face {
-    font-family: 'Booster Next FY';
+    font-family: 'BoosterNextFY';
     src: url('/static/assets/fonts/BoosterNextFY-Medium.otf') format('opentype');
     font-weight: 500;
     font-style: normal;
@@ -36,7 +36,7 @@
 }
 
 @font-face {
-    font-family: 'Booster Next FY';
+    font-family: 'BoosterNextFY';
     src: url('/static/assets/fonts/BoosterNextFY-Bold.otf') format('opentype');
     font-weight: 700;
     font-style: normal;
@@ -44,7 +44,7 @@
 }
 
 @font-face {
-    font-family: 'Booster Next FY';
+    font-family: 'BoosterNextFY';
     src: url('/static/assets/fonts/BoosterNextFY-Black.otf') format('opentype');
     font-weight: 900;
     font-style: normal;

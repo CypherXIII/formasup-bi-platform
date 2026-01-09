@@ -95,24 +95,18 @@ FAVICONS = [{"href": "/static/assets/images/favicon.ico"}]
 # the theming system using THEME_DEFAULT. See: https://github.com/apache/superset/issues/36940
 #
 # FormaSup color palette:
-# - Primary (dark blue): #134169 - good on white, needs lightening for dark mode
-# - Secondary (light blue): #7EB0C1 - good on dark, needs darkening for light mode
-# - Accent (gold): #f3be72 - good on dark, use darker #c99a42 for light mode
-#
-# Contrast ratios (WCAG AA requires 4.5:1 for text):
-# - #134169 on white: 9.2:1 (excellent)
-# - #7EB0C1 on black: 8.5:1 (excellent)
-# - #c99a42 on white: 3.1:1 (use for large text/icons only)
-# - #f3be72 on black: 10.2:1 (excellent)
+# - Primary (dark blue): #134169
+# - Secondary (light blue): #7EB0C1
+# - Accent (gold): #f3be72
 
 THEME_DEFAULT = {
     "algorithm": "default",
     "token": {
-        # Custom font - Booster Next FY (self-hosted)
+        # Custom font - BoosterNextFY (self-hosted)
         "fontUrls": [
             "/static/assets/fonts/booster-next-fy.css",
         ],
-        "fontFamily": "'Booster Next FY', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        "fontFamily": "'BoosterNextFY', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         "fontFamilyCode": "'Fira Code', 'Monaco', 'Consolas', monospace",
 
         # Branding (Superset-specific tokens)
@@ -486,6 +480,18 @@ def FLASK_APP_MUTATOR(app):
 
         except Exception as e:
             logger.warning(f"Role/permission configuration error: {e}")
+
+
+# =============================================================================
+# CUSTOM FONTS
+# =============================================================================
+
+# Custom font configuration
+# Load external fonts at runtime without rebuilding the application
+# For local fonts, use the path to your CSS file
+CUSTOM_FONT_URLS = [
+    "/static/assets/fonts/booster-next-fy.css",
+]
 
 
 # =============================================================================
