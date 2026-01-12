@@ -7,4 +7,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./migration/ .
 
-CMD ["python", "migrate.py"]
+# Run in daemon mode: executes migration once per day
+CMD ["python", "migrate.py", "--daemon"]

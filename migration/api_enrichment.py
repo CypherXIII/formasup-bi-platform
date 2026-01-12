@@ -374,6 +374,16 @@ def api_enrich_companies(
         f"Statistics: Processed: {stats['processed']}, Inserted: {stats['inserted']}, Errors: {stats['errors']}, La Poste: {stats['laposte_valid']}"
     )
 
+    # OPCO enrichment if enabled
+    if cfg.opco_enabled:
+        logger.info("=== OPCO Enrichment ===")
+        opco_stats = enrich_companies_with_opco(conn_pg, cfg, api_client)
+        stats["opco_updated"] = opco_stats.get("updated", 0)
+        stats["opco_not_found"] = opco_stats.get("not_found", 0)
+        stats["opco_errors"] = opco_stats.get("errors", 0)
+    else:
+        logger.info("OPCO enrichment disabled in configuration (ENABLE_OPCO_ENRICHMENT=false)")
+
     return stats
 
 
@@ -390,12 +400,12 @@ def _get_sirets_to_process(
     try:
         with conn_pg.cursor() as cur:
             cur.execute(f"""
-                SELECT DISTINCT c.siret 
+                SELECT DISTINCT c.siret
                 FROM {cfg.pg_schema}.company c
-                WHERE c.siret IS NOT NULL 
+                WHERE c.siret IS NOT NULL
                 AND c.siret != ''
                 AND c.siret NOT IN (
-                    SELECT siret FROM {cfg.pg_schema}.company_info 
+                    SELECT siret FROM {cfg.pg_schema}.company_info
                     WHERE siret IS NOT NULL
                 )
                 LIMIT 1000
@@ -520,7 +530,7 @@ def _process_single_siret(
             cur.execute(
                 f"""
                 INSERT INTO {cfg.pg_schema}.company_info (
-                    id, siret, name, naf_id, idcc_id, city_id, 
+                    id, siret, name, naf_id, idcc_id, city_id,
                     workforce, category, type_id, updated_at
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
                 ON CONFLICT (siret) DO UPDATE SET
@@ -886,9 +896,16 @@ def ensure_opco_table(conn: psycopg2.extensions.connection, cfg: Config) -> None
             f"""
             CREATE TABLE IF NOT EXISTS {cfg.pg_schema}.opco (
                 id SERIAL PRIMARY KEY,
-                name VARCHAR(100) NOT NULL UNIQUE,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                name VARCHAR(255),
+                updated_at TIMESTAMP DEFAULT NOW() NOT NULL
             )
+            """
+        )
+        # Create index on name if not exists
+        cur.execute(
+            f"""
+            CREATE INDEX IF NOT EXISTS idx_opco_name
+            ON {cfg.pg_schema}.opco (name)
             """
         )
         logger.info(f"Table {cfg.pg_schema}.opco checked/created")
@@ -941,7 +958,7 @@ def get_or_create_opco(
 def add_opco_fk_to_company_info(
     conn: psycopg2.extensions.connection, cfg: Config
 ) -> bool:
-    """! @brief Adds the id_opco (FK) column to the company_info table if it does not exist.
+    """! @brief Adds the opco_id (FK) column to the company_info table if it does not exist.
     @param conn Active PostgreSQL connection.
     @param cfg Configuration containing the schema.
     @return True if the column exists or was added, False in case of an error.
@@ -956,26 +973,26 @@ def add_opco_fk_to_company_info(
                 FROM information_schema.columns
                 WHERE table_schema = %s
                   AND table_name = 'company_info'
-                  AND column_name = 'id_opco'
+                  AND column_name = 'opco_id'
                 """,
                 (cfg.pg_schema,),
             )
 
             if cur.fetchone():
-                logger.debug("id_opco column already exists in company_info")
+                logger.debug("opco_id column already exists in company_info")
                 return True
 
             cur.execute(
                 f"""
                 ALTER TABLE {cfg.pg_schema}.company_info
-                ADD COLUMN id_opco INTEGER REFERENCES {cfg.pg_schema}.opco(id)
+                ADD COLUMN opco_id INTEGER REFERENCES {cfg.pg_schema}.opco(id)
                 """
             )
-            logger.info("id_opco column added to company_info")
+            logger.info("opco_id column added to company_info")
             return True
 
     except Exception as e:
-        logger.error(f"Error adding id_opco to company_info: {e}")
+        logger.error(f"Error adding opco_id to company_info: {e}")
         return False
 
 
@@ -997,7 +1014,7 @@ def update_company_opco(
             cur.execute(
                 f"""
                 UPDATE {cfg.pg_schema}.company_info
-                SET id_opco = %s
+                SET opco_id = %s
                 WHERE id = %s
                 """,
                 (opco_id, company_info_id),
@@ -1031,10 +1048,10 @@ def enrich_companies_with_opco(
     # Ensure structures exist
     ensure_opco_table(conn, cfg)
     if not add_opco_fk_to_company_info(conn, cfg):
-        logger.error("Could not add id_opco column")
+        logger.error("Could not add opco_id column")
         return stats
 
-    where_clause = "WHERE ci.id_opco IS NULL" if only_missing else ""
+    where_clause = "WHERE ci.opco_id IS NULL" if only_missing else ""
 
     with transaction(conn) as cur:
         cur.execute(
@@ -1098,7 +1115,7 @@ def get_opco_stats(
             f"""
             SELECT o.name, COUNT(ci.id) as count
             FROM {cfg.pg_schema}.opco o
-            LEFT JOIN {cfg.pg_schema}.company_info ci ON ci.id_opco = o.id
+            LEFT JOIN {cfg.pg_schema}.company_info ci ON ci.opco_id = o.id
             GROUP BY o.name
             ORDER BY count DESC
             """

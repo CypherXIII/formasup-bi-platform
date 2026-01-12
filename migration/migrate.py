@@ -13,7 +13,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
+import os
+import re
 import sys
+import time
+from datetime import date, datetime
+from pathlib import Path
 
 from api_enrichment import api_enrich_companies
 from cleanup import run_cleanup
@@ -25,6 +31,103 @@ from database import init_mariadb_metrics, get_mariadb_metrics, ma_execute
 from sync import sync_tables
 from temp_tables import create_temp_schema, create_temp_tables, drop_temp_schema
 
+
+# Constants for daily execution control
+DAILY_RUN_MARKER_FILE = "logs/last_run_date.txt"
+DEFAULT_RUN_HOUR = 2  # Default hour to run migration (2 AM)
+
+
+def get_last_run_date(log_file: str) -> date | None:
+    """! @brief Get the last successful migration run date from the log file.
+
+    Parses the log file to find the most recent "Migration finished" entry
+    and extracts its date.
+
+    Args:
+        log_file: Path to the migration log file.
+
+    Returns:
+        The date of the last successful migration, or None if not found.
+    """
+    log_path = Path(log_file)
+    if not log_path.exists():
+        return None
+
+    try:
+        with open(log_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        # Search from the end for the most recent "Migration finished"
+        for line in reversed(lines):
+            if "Migration finished" in line:
+                # Log format: "2026-01-12 02:00:00,123 | INFO     | Migration finished."
+                match = re.match(r"(\d{4}-\d{2}-\d{2})", line)
+                if match:
+                    return datetime.strptime(match.group(1), "%Y-%m-%d").date()
+    except (OSError, ValueError):
+        pass
+
+    return None
+
+
+def should_run_today(log_file: str) -> bool:
+    """! @brief Check if migration should run today.
+
+    Migration runs only once per day. This function checks the log file
+    to determine if a successful migration has already run today.
+
+    Args:
+        log_file: Path to the migration log file.
+
+    Returns:
+        True if migration should run, False if it has already run today.
+    """
+    last_run = get_last_run_date(log_file)
+    today = date.today()
+
+    if last_run is None:
+        return True
+
+    return last_run < today
+
+
+def is_time_to_run(run_hour: int) -> bool:
+    """! @brief Check if current time has reached the scheduled run hour.
+
+    Args:
+        run_hour: Hour of the day to run migration (0-23).
+
+    Returns:
+        True if current hour >= run_hour, False otherwise.
+    """
+    current_hour = datetime.now().hour
+    return current_hour >= run_hour
+
+
+def wait_until_run_time(run_hour: int, logger: logging.Logger) -> None:
+    """! @brief Wait until the scheduled run time.
+
+    Args:
+        run_hour: Hour of the day to run migration (0-23).
+        logger: Logger instance for status messages.
+    """
+    while not is_time_to_run(run_hour):
+        current_time = datetime.now()
+        target_time = current_time.replace(hour=run_hour, minute=0, second=0, microsecond=0)
+
+        # If target time is in the past today, it means we passed it
+        if target_time <= current_time:
+            return
+
+        wait_seconds = (target_time - current_time).total_seconds()
+        wait_minutes = int(wait_seconds / 60)
+
+        logger.info(
+            f"Waiting {wait_minutes} minutes until scheduled run time ({run_hour:02d}:00)..."
+        )
+
+        # Sleep for 5 minutes and check again
+        time.sleep(min(300, wait_seconds))
 
 def parse_args() -> argparse.Namespace:
     """! @brief Parse command line arguments.
@@ -50,32 +153,32 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--tables", nargs="+", help="Specific tables to migrate (default: all)"
     )
+    p.add_argument(
+        "--force",
+        action="store_true",
+        help="Force migration even if already run today",
+    )
+    p.add_argument(
+        "--once",
+        action="store_true",
+        help="Run once and exit (do not wait for next day)",
+    )
+    p.add_argument(
+        "--daemon",
+        action="store_true",
+        help="Run as daemon: execute once per day, wait and repeat",
+    )
     return p.parse_args()
 
 
-def main() -> None:
-    """! @brief Main migration function.
-    
-    This function orchestrates the entire migration process based on the
-    provided command-line arguments. It handles configuration, logging,
-    and the execution of migration, cleanup, and synchronization steps.
+def run_migration_cycle(args: argparse.Namespace, cfg: Config, logger: "logging.Logger") -> None:
+    """! @brief Execute a single migration cycle.
+
+    Args:
+        args: Parsed command line arguments.
+        cfg: Configuration object.
+        logger: Logger instance.
     """
-    args = parse_args()
-
-    # Load and validate configuration
-    cfg = Config()
-    try:
-        cfg.validate()
-    except Exception as e:
-        print(f"Configuration error: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    # Configure logger
-    logger = setup_logger(cfg.log_file)
-    # Specific logger for DB metrics + metric initialization
-    if cfg.enable_db_metrics:
-        setup_db_logger(cfg.db_metrics_log_file)
-        init_mariadb_metrics(cfg)
     logger.info("Starting migration (step=%s, dry_run=%s)", args.step, args.dry_run)
 
     with mariadb_connection(cfg) as ma_conn, postgres_connection(cfg) as pg_conn:
@@ -140,9 +243,9 @@ def main() -> None:
                     # First, check if the migration_type column exists
                     cur.execute(
                         """
-                        SELECT column_name 
-                        FROM information_schema.columns 
-                        WHERE table_schema = %s AND table_name = 'migration_logs' 
+                        SELECT column_name
+                        FROM information_schema.columns
+                        WHERE table_schema = %s AND table_name = 'migration_logs'
                         AND column_name = 'migration_type'
                     """,
                         (cfg.pg_schema,),
@@ -195,5 +298,80 @@ def main() -> None:
                 )
 
 
+def main() -> None:
+    """! @brief Main migration function.
+
+    This function orchestrates the entire migration process based on the
+    provided command-line arguments. It handles configuration, logging,
+    and the execution of migration, cleanup, and synchronization steps.
+
+    The migration runs only once per day unless --force is specified.
+    With --daemon flag, it will wait and run again the next day.
+    """
+    args = parse_args()
+
+    # Load and validate configuration
+    cfg = Config()
+    try:
+        cfg.validate()
+    except Exception as e:
+        print(f"Configuration error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Configure logger
+    logger = setup_logger(cfg.log_file)
+    # Specific logger for DB metrics + metric initialization
+    if cfg.enable_db_metrics:
+        setup_db_logger(cfg.db_metrics_log_file)
+        init_mariadb_metrics(cfg)
+
+    # Daemon mode: run once per day in a loop
+    if args.daemon:
+        logger.info(
+            f"Starting migration daemon (runs once per day at {cfg.migration_run_hour:02d}:00)..."
+        )
+        while True:
+            # Check if migration should run today
+            if args.force or should_run_today(cfg.log_file):
+                # Only wait if we haven't reached the scheduled time yet
+                # If we're past the scheduled time, run immediately
+                if not args.force and not is_time_to_run(cfg.migration_run_hour):
+                    wait_until_run_time(cfg.migration_run_hour, logger)
+
+                run_migration_cycle(args, cfg, logger)
+                # Reset force flag after first run in daemon mode
+                args.force = False
+            else:
+                logger.info(
+                    "Migration already completed today (last run: %s)",
+                    get_last_run_date(cfg.log_file)
+                )
+
+            # Wait for 1 hour before checking again
+            logger.info("Sleeping for 1 hour before next check...")
+            time.sleep(3600)
+
+    # Single run mode (default or --once)
+    else:
+        if not args.force and not should_run_today(cfg.log_file):
+            last_run = get_last_run_date(cfg.log_file)
+            logger.info(
+                "Migration already completed today (last run: %s). "
+                "Use --force to run anyway.",
+                last_run
+            )
+            return
+
+        # Wait until scheduled time unless forced
+        if not args.force and not is_time_to_run(cfg.migration_run_hour):
+            logger.info(
+                f"Waiting until scheduled run time ({cfg.migration_run_hour:02d}:00)..."
+            )
+            wait_until_run_time(cfg.migration_run_hour, logger)
+
+        run_migration_cycle(args, cfg, logger)
+
+
 if __name__ == "__main__":
     main()
+

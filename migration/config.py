@@ -54,6 +54,9 @@ class Config:
         "OPCO_RESOURCE_ID", "59533036-3c0b-45e6-972c-e967c0a1be17"
     )
 
+    # Migration scheduling
+    migration_run_hour: int = int(os.getenv("MIGRATION_RUN_HOUR", "2"))
+
     def validate(self) -> None:
         """! @brief Validates that all required environment variables are set.
         @raises EnvironmentError If any required environment variables are missing.
@@ -63,7 +66,8 @@ class Config:
             "batch_size", "log_file", "temp_schema",
             "enable_db_metrics", "db_metrics_slow_ms", "db_metrics_log_file",
             "requests_per_second", "api_enabled",
-            "opco_enabled", "opco_resource_id"
+            "opco_enabled", "opco_resource_id",
+            "migration_run_hour"
         }
         missing = [
             field
