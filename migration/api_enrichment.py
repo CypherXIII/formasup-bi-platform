@@ -771,7 +771,7 @@ def get_opco_by_siret(
 
     url = f"{TABULAR_API_BASE}/resources/{resource_id}/data/"
     params = {
-        "siret__exact": siret,
+        "SIRET__exact": siret,
         "page_size": 1,
     }
 
@@ -803,7 +803,9 @@ def get_opco_by_siret(
 
         opco_data = results[0]
         opco_name = (
-            opco_data.get("opco")
+            opco_data.get("OPCO_PROPRIETAIRE")
+            or opco_data.get("OPCO_GESTION")
+            or opco_data.get("opco")
             or opco_data.get("nom_opco")
             or opco_data.get("OPCO")
             or opco_data.get("NOM_OPCO")
@@ -840,7 +842,7 @@ def get_opco_by_siren(
 
     url = f"{TABULAR_API_BASE}/resources/{resource_id}/data/"
     params = {
-        "siret__startswith": siren,
+        "SIRET__startswith": siren,
         "page_size": 100,
     }
 
@@ -863,7 +865,9 @@ def get_opco_by_siren(
         opco_counts: Dict[str, int] = {}
         for row in results:
             opco_name = (
-                row.get("opco")
+                row.get("OPCO_PROPRIETAIRE")
+                or row.get("OPCO_GESTION")
+                or row.get("opco")
                 or row.get("nom_opco")
                 or row.get("OPCO")
                 or row.get("NOM_OPCO")
