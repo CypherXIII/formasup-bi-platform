@@ -83,8 +83,11 @@ services:
       retries: 10
 
   migration:
-    build: ./migration
+    build:
+      context: .
+      dockerfile: ./migration/Dockerfile
     container_name: migration-fsa
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,6 +95,25 @@ services:
       - fsa-net
     volumes:
       - ./migration:/app
+    environment:
+      MARIA_HOST: ${MARIA_HOST}
+      MARIA_USER: ${MARIA_USER}
+      MARIA_PASSWORD: ${MARIA_PASSWORD}
+      MARIA_DB: ${MARIA_DB}
+      PG_HOST: ${PG_HOST}
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+      PG_DB: ${PG_DB}
+      PG_SCHEMA: ${PG_SCHEMA}
+      BATCH_SIZE: ${BATCH_SIZE}
+      ENABLE_API_ENRICHMENT: ${ENABLE_API_ENRICHMENT}
+      API_REQUESTS_PER_SECOND: ${API_REQUESTS_PER_SECOND}
+    healthcheck:
+      test: ["CMD", "python", "migrate.py", "--step", "migrate", "--dry-run"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 networks:
   fsa-net:

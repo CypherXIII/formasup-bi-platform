@@ -15,14 +15,14 @@ from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
-# Load environment variables from the .env file
-load_dotenv()
+# Environment variables are provided directly by Docker/docker-compose
+# No need to load from .env file
 
 
 @dataclass(frozen=True)
 class Config:
     """! @brief Holds all configuration parameters for the migration.
-    
+
     This class loads settings from environment variables and provides a single
     point of access for all configuration values.
     """
@@ -78,7 +78,7 @@ class Config:
 
 # Table structure
 CONFLICT_KEYS = {
-    "cpne": "id",
+    "rncp": "id",
     "cerfa_param": "id",
     "degree_level": "id",
     "degree": "id",
@@ -101,7 +101,7 @@ CONFLICT_KEYS = {
 }
 
 TABLE_ORDER = [
-    "cpne",
+    "rncp",
     "cerfa_param",
     "degree_level",
     "degree",
