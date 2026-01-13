@@ -42,8 +42,8 @@ def sync_company_sirets(
             # 1. Insert new companies (SIRETs that don't exist in staging)
             # Only insert siret - other fields are populated by API enrichment
             cur.execute(f"""
-                INSERT INTO {cfg.pg_schema}.company (siret)
-                SELECT tc.siret
+                INSERT INTO {cfg.pg_schema}.company (siret, discr)
+                SELECT tc.siret, tc.discr
                 FROM {cfg.temp_schema}.company tc
                 WHERE tc.siret IS NOT NULL
                   AND tc.siret != ''
