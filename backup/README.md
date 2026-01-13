@@ -35,7 +35,9 @@ docker exec backup-fsa /usr/local/bin/backup.sh
 ## Backup Location
 
 Backups are stored in `./backups/` directory:
-- `fsa_staging_YYYYMMDD_HHMMSS.dump` - FSA database
+
+- `fsa_staging_YYYYMMDD_HHMMSS.dump` - FSA staging schema
+- `fsa_dwh_YYYYMMDD_HHMMSS.dump` - FSA data warehouse schema
 - `superset_YYYYMMDD_HHMMSS.dump` - Superset database
 
 ## Restore
@@ -43,8 +45,11 @@ Backups are stored in `./backups/` directory:
 To restore a backup:
 
 ```bash
-# Restore FSA database
+# Restore FSA staging schema
 docker exec -i postgres-fsa pg_restore -U postgres -d FSA -c ./backups/fsa_staging_XXXXXXXX_XXXXXX.dump
+
+# Restore FSA dwh schema
+docker exec -i postgres-fsa pg_restore -U postgres -d FSA -c ./backups/fsa_dwh_XXXXXXXX_XXXXXX.dump
 
 # Restore Superset database
 docker exec -i superset-db pg_restore -U superset -d superset -c ./backups/superset_XXXXXXXX_XXXXXX.dump

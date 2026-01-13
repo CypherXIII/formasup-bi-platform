@@ -16,11 +16,18 @@ mkdir -p "${BACKUP_DIR}"
 echo "[$(date)] Starting daily backup..."
 
 # Backup FSA database (staging schema)
-echo "[$(date)] Backing up FSA database..."
+echo "[$(date)] Backing up FSA staging schema..."
 pg_dump -h "${PG_HOST}" -U "${PG_USER}" -d "${PG_DB}" \
     -n staging -F c -f "${BACKUP_DIR}/fsa_staging_${TIMESTAMP}.dump"
 
-echo "[$(date)] FSA backup completed: fsa_staging_${TIMESTAMP}.dump"
+echo "[$(date)] FSA staging backup completed: fsa_staging_${TIMESTAMP}.dump"
+
+# Backup FSA database (dwh schema)
+echo "[$(date)] Backing up FSA dwh schema..."
+pg_dump -h "${PG_HOST}" -U "${PG_USER}" -d "${PG_DB}" \
+    -n dwh -F c -f "${BACKUP_DIR}/fsa_dwh_${TIMESTAMP}.dump"
+
+echo "[$(date)] FSA dwh backup completed: fsa_dwh_${TIMESTAMP}.dump"
 
 # Backup Superset database
 echo "[$(date)] Backing up Superset database..."
