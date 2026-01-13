@@ -61,8 +61,16 @@ A production-ready Business Intelligence platform based on Apache Superset 6.0.0
 
 - **MariaDB to PostgreSQL migration** with intelligent deduplication
 - **API enrichment** for company data via French government APIs
+- **Unified company table** (staging and enriched data merged)
 - **Batch processing** with rate limiting and performance optimization
 - **Comprehensive logging** and error handling
+
+### Backup & Recovery
+
+- **Automated daily backups** at 3 AM (configurable)
+- **Multi-schema support** (staging + dwh)
+- **Configurable retention** (default: 7 days)
+- **One-command restore** from backup files
 
 ### Security Features
 
@@ -89,8 +97,19 @@ formasup-bi-platform/
 │   ├── superset.service        # systemd service file
 │   └── README.md               # Deployment documentation
 │
+├── backup/                     # Automated backup service
+│   ├── Dockerfile              # Backup container
+│   ├── backup.sh               # Backup script
+│   ├── entrypoint.sh           # Container entrypoint
+│   └── README.md               # Backup documentation
+│
+├── backups-files/              # Backup storage directory
+│   └── .gitkeep                # Keep directory in git
+│
 ├── init/                       # PostgreSQL initialization scripts
-│   └── backup_20250731.sql     # Database backup
+│   ├── backup.dump             # Latest database backup
+│   ├── merge_company_tables.sql # Company table migration
+│   └── sync_sequences.sql      # Sequence synchronization
 │
 ├── migration/                  # Data migration tools
 │   ├── migrate.py              # Main entry point
@@ -142,6 +161,7 @@ formasup-bi-platform/
 | PostgreSQL    | postgres-fsa    | 5432  | Business data database         |
 | Superset DB   | superset-db     | 5442  | Superset metadata database     |
 | Migration     | migration-fsa   | -     | Data migration service         |
+| Backup        | backup-fsa      | -     | Daily automated backups        |
 
 ---
 
