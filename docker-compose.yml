@@ -43,7 +43,7 @@ services:
         superset run -h 0.0.0.0 -p 8088"
 
   postgres:
-    image: postgres:15
+    image: postgres:17
     container_name: postgres-fsa
     restart: always
     environment:
