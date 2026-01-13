@@ -200,6 +200,40 @@ def find_idcc_id(
         return 0
 
 
+def get_idcc_from_siret2idcc_api(siret: str, api_client: RateLimitedAPI) -> str:
+    """! @brief Retrieves IDCC code from siret2idcc API as fallback.
+    @param siret SIRET to search for.
+    @param api_client API client with rate limiting.
+    @return IDCC code (num field) or None if not found.
+    """
+    if not siret:
+        return None
+
+    logger = logging.getLogger("migration")
+
+    try:
+        url = f"https://siret2idcc.fabrique.social.gouv.fr/api/v2/{siret}"
+        response = api_client.get(url)
+
+        if response.status_code == 200:
+            data = response.json()
+            if data and isinstance(data, list) and len(data) > 0:
+                siret_data = data[0]
+                conventions = siret_data.get("conventions", [])
+                if conventions:
+                    # Take first active convention
+                    for conv in conventions:
+                        if conv.get("active") and conv.get("num"):
+                            logger.info(
+                                f"IDCC {conv['num']} found via siret2idcc API for SIRET {siret}"
+                            )
+                            return conv["num"]
+        return None
+    except Exception as e:
+        logger.debug(f"Error calling siret2idcc API for SIRET {siret}: {e}")
+        return None
+
+
 def find_city_id(
     conn_pg: psycopg2.extensions.connection, cfg: Config, commune: str
 ) -> int:
@@ -623,6 +657,23 @@ def _get_idcc_info(
         except Exception as e:
             logger.error(f"Error searching IDCC via SIREN {siren}: {e}")
 
+    # Fallback to siret2idcc API if still not found
+    if not idcc_id:
+        logger.info(
+            f"Attempting fallback to siret2idcc API for SIRET {siret}"
+        )
+        try:
+            fallback_idcc = get_idcc_from_siret2idcc_api(siret, api_client)
+            if fallback_idcc:
+                first_idcc = fallback_idcc
+                idcc_id = find_idcc_id(conn_pg, cfg, first_idcc)
+                if idcc_id:
+                    logger.info(
+                        f"IDCC found via siret2idcc fallback API: {first_idcc}"
+                    )
+        except Exception as e:
+            logger.debug(f"Fallback siret2idcc API failed for SIRET {siret}: {e}")
+
     # Final log
     if not idcc_id:
         logger.warning(
@@ -963,12 +1014,14 @@ def get_or_create_opco(
                 f"""
                 INSERT INTO {cfg.pg_schema}.opco (name, updated_at)
                 VALUES (%s, CURRENT_TIMESTAMP)
+                ON CONFLICT (name) DO UPDATE
+                SET updated_at = CURRENT_TIMESTAMP
                 RETURNING id
                 """,
                 (normalized_name,),
             )
             new_id = cur.fetchone()[0]
-            logger.info(f"OPCO created: {normalized_name} (id={new_id})")
+            logger.info(f"OPCO created or updated: {normalized_name} (id={new_id})")
             return new_id
 
     except Exception as e:

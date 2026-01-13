@@ -13,7 +13,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-from dotenv import load_dotenv # type: ignore  # noqa: F401
+from dotenv import load_dotenv
 
 # Environment variables are provided directly by Docker/docker-compose
 # No need to load from .env file
@@ -60,7 +60,7 @@ class Config:
 
     # API enrichment limit (number of SIRETs to enrich per batch)
     # Set to 0 or -1 to disable limit and process all SIRETs
-    enrichment_siret_limit: int = int(os.getenv("ENRICHMENT_SIRET_LIMIT", "1000"))
+    enrichment_siret_limit: int = int(os.getenv("ENRICHMENT_SIRET_LIMIT", "-1"))
 
     # Migration scheduling
     migration_run_hour: int = int(os.getenv("MIGRATION_RUN_HOUR", "2"))
@@ -91,12 +91,10 @@ class Config:
 
 # Table structure
 CONFLICT_KEYS = {
-    "rncp": "id",
     "cerfa_param": "id",
     "degree_level": "id",
     "degree": "id",
     "company": "id",
-    "city": "code",
     "institution": "id",
     "component": "id",
     "billing": "id",
@@ -114,12 +112,10 @@ CONFLICT_KEYS = {
 }
 
 TABLE_ORDER = [
-    "rncp",
     "cerfa_param",
     "degree_level",
     "degree",
     "company",
-    "city",
     "institution",
     "component",
     "billing",
