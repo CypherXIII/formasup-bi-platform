@@ -1044,6 +1044,58 @@ def get_or_create_opco(
         return None
 
 
+def add_company_fk_to_company_info(
+    conn: psycopg2.extensions.connection, cfg: Config
+) -> bool:
+    """! @brief Adds the foreign key constraint linking company_info.id to company.id.
+    @param conn Active PostgreSQL connection.
+    @param cfg Configuration containing the schema.
+    @return True if the constraint exists or was added, False in case of an error.
+    @note The company_info.id and company.id share the same value by design.
+    """
+    logger = logging.getLogger("migration")
+
+    constraint_name = "fk_company_info_company"
+
+    try:
+        with transaction(conn) as cur:
+            # Check if the constraint already exists
+            cur.execute(
+                """
+                SELECT constraint_name
+                FROM information_schema.table_constraints
+                WHERE table_schema = %s
+                  AND table_name = 'company_info'
+                  AND constraint_name = %s
+                  AND constraint_type = 'FOREIGN KEY'
+                """,
+                (cfg.pg_schema, constraint_name),
+            )
+
+            if cur.fetchone():
+                logger.debug(
+                    f"Foreign key constraint {constraint_name} already exists"
+                )
+                return True
+
+            cur.execute(
+                f"""
+                ALTER TABLE {cfg.pg_schema}.company_info
+                ADD CONSTRAINT {constraint_name}
+                FOREIGN KEY (id) REFERENCES {cfg.pg_schema}.company(id)
+                ON DELETE CASCADE
+                """
+            )
+            logger.info(
+                f"Foreign key constraint {constraint_name} added to company_info"
+            )
+            return True
+
+    except Exception as e:
+        logger.error(f"Error adding FK constraint to company_info: {e}")
+        return False
+
+
 def add_opco_fk_to_company_info(
     conn: psycopg2.extensions.connection, cfg: Config
 ) -> bool:
