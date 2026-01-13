@@ -132,7 +132,7 @@ services:
     networks:
       - fsa-net
     volumes:
-      - ./backups:/backups
+      - ./backups-files:/backups
     environment:
       PG_HOST: postgres-fsa
       PG_USER: ${POSTGRES_USER}
