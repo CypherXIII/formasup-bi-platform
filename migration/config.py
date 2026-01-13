@@ -13,7 +13,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv # type: ignore  # noqa: F401
 
 # Environment variables are provided directly by Docker/docker-compose
 # No need to load from .env file
