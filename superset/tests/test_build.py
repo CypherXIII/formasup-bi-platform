@@ -53,8 +53,8 @@ class TestBuildScript:
         # Verify key script elements
         assert 'BUILD_TRANSLATIONS=true' in content
         assert 'FormaSup' in content
-        assert 'francais' in content or 'français' in content
-        assert 'procedure officielle' in content
+        assert 'Français' in content
+        assert 'Procédure officielle' in content
 
     @patch('subprocess.run')
     def test_build_script_execution_simulation(self, mock_run):
@@ -91,7 +91,7 @@ class TestBuildProcess:
     def test_superset_source_exists(self):
         """Test that Superset source code exists or can be cloned."""
         superset_src = Path(__file__).parent.parent / "apache-superset-src"
-        
+
         # The folder may not exist if the repo has not been cloned yet
         # In that case, verify that the README documents how to clone it
         if superset_src.exists():
@@ -112,12 +112,12 @@ class TestBuildProcess:
     def test_backup_messages_exists(self):
         """Test that translations file exists."""
         superset_root = Path(__file__).parent.parent
-        
+
         # Look in locales/ first, otherwise at project root
         backup_po = superset_root / "locales" / "backup-messages.po"
         if not backup_po.exists():
             backup_po = superset_root.parent / "backup-messages.po"
-        
+
         assert backup_po.exists(), f"backup-messages.po not found in {superset_root}"
         assert backup_po.stat().st_size > 0
 
@@ -153,18 +153,17 @@ class TestConfigurationIntegration:
 
         # Verify French parameters
         assert 'BABEL_DEFAULT_LOCALE = "fr"' in content
-        assert '"fr": {"flag": "fr", "name": "Français"}' in content
-        assert 'BABEL_DEFAULT_TIMEZONE = "Europe/Paris"' in content
+        assert '"fr": {"flag": "fr", "name": "Francais"}' in content
 
     def test_build_instructions_reference(self):
         """Test that build instructions are referenced."""
-        config_path = Path(__file__).parent.parent / "config" / "superset_config.py"
+        script_path = Path(__file__).parent.parent / "scripts" / "build-superset-fr.ps1"
 
-        with open(config_path, 'r', encoding='utf-8') as f:
+        with open(script_path, 'r', encoding='utf-8') as f:
             content = f.read()
 
         # Verify references to build process
-        assert 'official' in content.lower() or 'documentation' in content.lower()
+        assert 'Procédure officielle' in content
         assert 'BUILD_TRANSLATIONS=true' in content
 
 

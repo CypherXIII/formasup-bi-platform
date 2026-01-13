@@ -1,4 +1,11 @@
 #!/usr/bin/env pwsh
+<#
+.SYNOPSIS
+Build Superset with French translations (BUILD_TRANSLATIONS=true)
+.DESCRIPTION
+Build Docker image with French translations enabled
+#>
+
 # Build Superset with French translations
 # Author: FormaSup Auvergne
 
@@ -20,6 +27,7 @@ if (-not (Test-Path $SUPERSET_SRC)) {
 }
 
 # Copy translations
+# Procédure officielle: https://superset.apache.org/docs/installation/building-custom-docker-images
 $backupPo = Join-Path $SUPERSET_DIR "locales\backup-messages.po"
 $targetPo = Join-Path $SUPERSET_SRC "superset\translations\fr\LC_MESSAGES\messages.po"
 
@@ -28,7 +36,7 @@ if (Test-Path $backupPo) {
     Write-Host "[OK] French translations copied" -ForegroundColor Green
 }
 
-# Build Docker image
+# Build Docker image with Français interface
 Write-Host "Building Docker image (this may take 10-20 minutes)..." -ForegroundColor Cyan
 
 Push-Location $SUPERSET_SRC

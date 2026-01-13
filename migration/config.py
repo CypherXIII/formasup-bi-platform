@@ -13,7 +13,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv # type: ignore  # noqa: F401
 
 # Environment variables are provided directly by Docker/docker-compose
 # No need to load from .env file
@@ -47,12 +47,20 @@ class Config:
 
     requests_per_second: int = int(os.getenv("API_REQUESTS_PER_SECOND", "7"))
     api_enabled: bool = os.getenv("ENABLE_API_ENRICHMENT", "false").lower() == "true"
+    api_retries: int = int(os.getenv("API_RETRIES", "3"))
+    api_backoff_factor: int = int(os.getenv("API_BACKOFF_FACTOR", "1"))
 
     # OPCO enrichment
     opco_enabled: bool = os.getenv("ENABLE_OPCO_ENRICHMENT", "false").lower() == "true"
     opco_resource_id: str = os.getenv(
         "OPCO_RESOURCE_ID", "59533036-3c0b-45e6-972c-e967c0a1be17"
     )
+    opco_page_size_siret: int = int(os.getenv("OPCO_PAGE_SIZE_SIRET", "1"))
+    opco_page_size_siren: int = int(os.getenv("OPCO_PAGE_SIZE_SIREN", "100"))
+
+    # API enrichment limit (number of SIRETs to enrich per batch)
+    # Set to 0 or -1 to disable limit and process all SIRETs
+    enrichment_siret_limit: int = int(os.getenv("ENRICHMENT_SIRET_LIMIT", "1000"))
 
     # Migration scheduling
     migration_run_hour: int = int(os.getenv("MIGRATION_RUN_HOUR", "2"))
@@ -65,8 +73,9 @@ class Config:
         optional_fields = {
             "batch_size", "log_file", "temp_schema",
             "enable_db_metrics", "db_metrics_slow_ms", "db_metrics_log_file",
-            "requests_per_second", "api_enabled",
-            "opco_enabled", "opco_resource_id",
+            "requests_per_second", "api_enabled", "api_retries", "api_backoff_factor",
+            "opco_enabled", "opco_resource_id", "opco_page_size_siret", "opco_page_size_siren",
+            "enrichment_siret_limit",
             "migration_run_hour"
         }
         missing = [

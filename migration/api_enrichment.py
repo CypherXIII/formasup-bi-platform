@@ -11,7 +11,7 @@ It includes SIRET validation, company data retrieval, and OPCO enrichment.
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-import psycopg2
+import psycopg2 # type: ignore
 
 from api_client import RateLimitedAPI
 from database import transaction
@@ -308,7 +308,11 @@ def api_enrich_companies(
     laposte_sirets = []
 
     # Create a reusable API client instance
-    api_client = RateLimitedAPI(cfg.requests_per_second)
+    api_client = RateLimitedAPI(
+        cfg.requests_per_second,
+        retries=cfg.api_retries,
+        backoff_factor=cfg.api_backoff_factor
+    )
 
     try:
         # Retrieve SIRETs to process
@@ -392,14 +396,23 @@ def _get_sirets_to_process(
 ) -> list:
     """! @brief Retrieves the list of SIRETs to process.
     @param conn_pg Active PostgreSQL connection.
-    @param cfg Configuration with schema information.
+    @param cfg Configuration with schema information and enrichment_siret_limit.
     @return List of SIRETs to process.
+    @note Set enrichment_siret_limit to 0 or -1 to disable the limit.
     """
     logger = logging.getLogger("migration")
 
     try:
         with conn_pg.cursor() as cur:
-            cur.execute(f"""
+            # Build query with optional LIMIT clause
+            limit_clause = ""
+            params = ()
+
+            if cfg.enrichment_siret_limit > 0:
+                limit_clause = "LIMIT %s"
+                params = (cfg.enrichment_siret_limit,)
+
+            query = f"""
                 SELECT DISTINCT c.siret
                 FROM {cfg.pg_schema}.company c
                 WHERE c.siret IS NOT NULL
@@ -408,8 +421,10 @@ def _get_sirets_to_process(
                     SELECT siret FROM {cfg.pg_schema}.company_info
                     WHERE siret IS NOT NULL
                 )
-                LIMIT 1000
-            """)
+                {limit_clause}
+            """
+
+            cur.execute(query, params)
             return [row[0] for row in cur.fetchall()]
     except Exception as e:
         logger.error(f"Error while retrieving SIRETs: {e}")
@@ -755,12 +770,13 @@ OPCO_NAMES = {
 
 
 def get_opco_by_siret(
-    siret: str, api_client: RateLimitedAPI, resource_id: str = SIRET_OPCO_RESOURCE_ID
+    siret: str, api_client: RateLimitedAPI, resource_id: str = SIRET_OPCO_RESOURCE_ID, page_size: int = 1
 ) -> Optional[str]:
     """! @brief Retrieves the name of the OPCO associated with a SIRET via the Tabular API.
     @param siret Company SIRET number (14 digits).
     @param api_client API client with rate limiting.
     @param resource_id ID of the CSV resource on data.gouv.fr.
+    @param page_size Number of results per page (default 1).
     @return Name of the OPCO or None if not found.
     """
     logger = logging.getLogger("migration")
@@ -772,7 +788,7 @@ def get_opco_by_siret(
     url = f"{TABULAR_API_BASE}/resources/{resource_id}/data/"
     params = {
         "SIRET__exact": siret,
-        "page_size": 1,
+        "page_size": page_size,
     }
 
     try:
@@ -824,7 +840,7 @@ def get_opco_by_siret(
 
 
 def get_opco_by_siren(
-    siren: str, api_client: RateLimitedAPI, resource_id: str = SIRET_OPCO_RESOURCE_ID
+    siren: str, api_client: RateLimitedAPI, resource_id: str = SIRET_OPCO_RESOURCE_ID, page_size: int = 100
 ) -> Optional[str]:
     """! @brief Retrieves the name of the OPCO associated with a SIREN via the Tabular API.
     Searches for all SIRETs starting with the SIREN and returns the
@@ -832,6 +848,7 @@ def get_opco_by_siren(
     @param siren Company SIREN number (9 digits).
     @param api_client API client with rate limiting.
     @param resource_id ID of the CSV resource on data.gouv.fr.
+    @param page_size Number of results per page (default 100).
     @return Name of the OPCO or None if not found.
     """
     logger = logging.getLogger("migration")
@@ -842,8 +859,8 @@ def get_opco_by_siren(
 
     url = f"{TABULAR_API_BASE}/resources/{resource_id}/data/"
     params = {
-        "SIRET__startswith": siren,
-        "page_size": 100,
+        "SIRET__contains": siren,
+        "page_size": page_size,
     }
 
     try:
@@ -1076,11 +1093,11 @@ def enrich_companies_with_opco(
             stats["not_found"] += 1
             continue
 
-        opco_name = get_opco_by_siret(siret, api_client)
+        opco_name = get_opco_by_siret(siret, api_client, page_size=cfg.opco_page_size_siret)
 
         if not opco_name and len(siret) >= 9:
             siren = siret[:9]
-            opco_name = get_opco_by_siren(siren, api_client)
+            opco_name = get_opco_by_siren(siren, api_client, page_size=cfg.opco_page_size_siren)
 
         if opco_name:
             opco_id = get_or_create_opco(conn, cfg, opco_name)

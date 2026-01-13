@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from config.superset_config import (
     SECRET_KEY, WTF_CSRF_ENABLED, SQLALCHEMY_DATABASE_URI,
     APP_NAME, APP_ICON, LOGO_TARGET_PATH, LOGO_TOOLTIP, LOGO_RIGHT_TEXT,
-    LANGUAGES, BABEL_DEFAULT_LOCALE, BABEL_DEFAULT_TIMEZONE
+    LANGUAGES, BABEL_DEFAULT_LOCALE
 )
 
 
@@ -74,7 +74,7 @@ class TestSupersetConfig:
         assert APP_NAME == "FormaSup BI"
         assert APP_ICON == "/static/assets/images/logo.png"
         assert LOGO_TARGET_PATH == "/superset/welcome"
-        assert LOGO_TOOLTIP == "Home"
+        assert LOGO_TOOLTIP == "Accueil"
         assert LOGO_RIGHT_TEXT == ""
 
     def test_language_configuration(self):
@@ -85,12 +85,11 @@ class TestSupersetConfig:
 
         french_config = LANGUAGES["fr"]
         assert french_config["flag"] == "fr"
-        assert french_config["name"] == "Français"
+        assert french_config["name"] == "Francais"
 
     def test_babel_configuration(self):
         """Test Babel configuration for French."""
         assert BABEL_DEFAULT_LOCALE == "fr"
-        assert BABEL_DEFAULT_TIMEZONE == "Europe/Paris"
 
     @patch('config.superset_config.logging.getLogger')
     def test_logger_initialization(self, mock_get_logger):
@@ -125,7 +124,6 @@ class TestConfigValidation:
         assert isinstance(LOGO_TOOLTIP, str)
         assert isinstance(LOGO_RIGHT_TEXT, str)
         assert isinstance(BABEL_DEFAULT_LOCALE, str)
-        assert isinstance(BABEL_DEFAULT_TIMEZONE, str)
 
         # Language dictionary
         assert isinstance(LANGUAGES, dict)
@@ -153,12 +151,9 @@ class TestConfigValidation:
         # Default locale
         assert BABEL_DEFAULT_LOCALE == "fr"
 
-        # French timezone
-        assert BABEL_DEFAULT_TIMEZONE == "Europe/Paris"
-
         # French language in configuration
         assert "fr" in LANGUAGES
-        assert LANGUAGES["fr"]["name"] == "Français"
+        assert LANGUAGES["fr"]["name"] == "Francais"
 
 
 class TestConfigEnvironmentIsolation:

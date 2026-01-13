@@ -47,5 +47,5 @@ def test_get_opco_by_siren_prefers_most_common_and_uppercase_field():
 
     opco = get_opco_by_siren("123456789", client)
 
-    assert client.calls[0]["params"]["SIRET__startswith"] == "123456789"
+    assert client.calls[0]["params"]["SIRET__contains"] == "123456789"
     assert opco == "OPCO 2I"

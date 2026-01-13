@@ -24,18 +24,20 @@ class RateLimitedAPI:
         lock: Verrou pour synchroniser les requêtes en multithreading
     """
 
-    def __init__(self, requests_per_second):
+    def __init__(self, requests_per_second, retries: int = 3, backoff_factor: int = 1):
         self.requests_per_second = requests_per_second
         self.min_interval = 1.0 / requests_per_second
         self.last_request_time = 0
+        self.retries = retries
+        self.backoff_factor = backoff_factor
         self.session = self._create_session()
         self.lock = threading.Lock()
 
     def _create_session(self):
-        """Crée une session HTTP avec stratégie de réessai automatique"""
+        """Creates an HTTP session with automatic retry strategy"""
         session = requests.Session()
         retry_strategy = Retry(
-            total=3, status_forcelist=[429, 500, 502, 503, 504], backoff_factor=1
+            total=self.retries, status_forcelist=[429, 500, 502, 503, 504], backoff_factor=self.backoff_factor
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         session.mount("https://", adapter)
@@ -43,15 +45,15 @@ class RateLimitedAPI:
 
     def request(self, method, url, **kwargs):
         """
-        Effectue une requête HTTP avec limitation de débit.
+        Perform an HTTP request with rate limiting.
 
         Args:
-            method: Méthode HTTP (GET, POST, etc.)
-            url: URL à interroger
-            **kwargs: Arguments supplémentaires pour requests.request
+            method: HTTP method (GET, POST, etc.)
+            url: URL to query
+            **kwargs: Additional arguments for requests.request
 
         Returns:
-            Réponse HTTP ou None en cas d'erreur
+            HTTP response or None in case of error
         """
         with self.lock:
             current_time = time.time()
@@ -63,9 +65,9 @@ class RateLimitedAPI:
 
         try:
             response = self.session.request(method, url, **kwargs)
-            # Si on reçoit un code 429, la stratégie de retry de la session s'occupe de la temporisation
+            # If we receive a 429 code, the session's retry strategy handles the timeout
             return response
         except requests.exceptions.RequestException as e:
-            logging.getLogger("migration").error(f"Erreur de requête API: {e}")
+            logging.getLogger("migration").error(f"API request error: {e}")
             time.sleep(2)
             return None
