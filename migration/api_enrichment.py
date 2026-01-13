@@ -415,10 +415,25 @@ def api_enrich_companies(
     # OPCO enrichment if enabled
     if cfg.opco_enabled:
         logger.info("=== OPCO Enrichment ===")
-        opco_stats = enrich_companies_with_opco(conn_pg, cfg, api_client)
-        stats["opco_updated"] = opco_stats.get("updated", 0)
-        stats["opco_not_found"] = opco_stats.get("not_found", 0)
-        stats["opco_errors"] = opco_stats.get("errors", 0)
+
+        # First pass: Use existing deadline/registration data (faster, no API calls)
+        logger.info("=== OPCO Enrichment from Deadline (First Pass) ===")
+        opco_stats_deadline = enrich_companies_with_opco_from_deadline(conn_pg, cfg)
+        stats["opco_from_deadline_updated"] = opco_stats_deadline.get("updated", 0)
+        stats["opco_from_deadline_not_found"] = opco_stats_deadline.get("not_found", 0)
+        stats["opco_from_deadline_errors"] = opco_stats_deadline.get("errors", 0)
+
+        # Second pass: Use API for companies without OPCO (only if needed)
+        logger.info("=== OPCO Enrichment from API (Second Pass) ===")
+        opco_stats_api = enrich_companies_with_opco(conn_pg, cfg, api_client, only_missing=True)
+        stats["opco_api_updated"] = opco_stats_api.get("updated", 0)
+        stats["opco_api_not_found"] = opco_stats_api.get("not_found", 0)
+        stats["opco_api_errors"] = opco_stats_api.get("errors", 0)
+
+        # Total OPCO statistics
+        stats["opco_updated"] = stats["opco_from_deadline_updated"] + stats["opco_api_updated"]
+        stats["opco_not_found"] = stats["opco_from_deadline_not_found"] + stats["opco_api_not_found"]
+        stats["opco_errors"] = stats["opco_from_deadline_errors"] + stats["opco_api_errors"]
     else:
         logger.info("OPCO enrichment disabled in configuration (ENABLE_OPCO_ENRICHMENT=false)")
 
@@ -1195,6 +1210,93 @@ def get_opco_stats(
             """
         )
         return cur.fetchall()
+
+
+def enrich_companies_with_opco_from_deadline(
+    conn: psycopg2.extensions.connection,
+    cfg: Config,
+    batch_size: int = 100,
+    only_missing: bool = True,
+) -> Dict[str, int]:
+    """! @brief Enriches company_info with OPCO data derived from deadline/billing and registration tables.
+    This function uses existing data relationships instead of API calls.
+    The OPCO is retrieved via deadline -> registration -> opco_address -> opco chain,
+    similar to the extract.py billing report query.
+    Links company_info to company via SIRET, then to registration via host_company_id.
+    @param conn Active PostgreSQL connection.
+    @param cfg Configuration containing the schema.
+    @param batch_size Number of companies to process per batch.
+    @param only_missing If True, only processes companies without an OPCO.
+    @return Dictionary with statistics (total, updated, not_found, errors).
+    """
+    logger = logging.getLogger("migration")
+    stats = {"total": 0, "updated": 0, "not_found": 0, "errors": 0}
+
+    try:
+        # Ensure structures exist
+        ensure_opco_table(conn, cfg)
+        if not add_opco_fk_to_company_info(conn, cfg):
+            logger.error("Could not add opco_id column")
+            return stats
+
+        # Query to find OPCO for each company using deadline and registration data
+        # This mirrors the approach used in extract.py for billing forecasts
+        # Link: company_info -> company (via SIRET) -> registration -> opco_address -> opco
+        with transaction(conn) as cur:
+            cur.execute(
+                f"""
+                SELECT DISTINCT
+                    ci.id,
+                    ci.siret,
+                    o.name AS opco_name
+                FROM {cfg.pg_schema}.company_info ci
+                INNER JOIN {cfg.pg_schema}.company c ON c.siret = ci.siret
+                INNER JOIN {cfg.pg_schema}.registration r ON r.host_company_id = c.id
+                INNER JOIN {cfg.pg_schema}.opco_address oa ON r.opco_address_id = oa.id
+                INNER JOIN {cfg.pg_schema}.opco o ON oa.opco_id = o.id
+                WHERE ci.opco_id IS NULL
+                AND o.name IS NOT NULL
+                ORDER BY ci.id
+                """
+            )
+            opco_mappings = cur.fetchall()
+
+        stats["total"] = len(opco_mappings)
+        logger.info(
+            f"Found {stats['total']} companies with OPCO data from deadline relationships"
+        )
+
+        for company_id, siret, opco_name in opco_mappings:
+            try:
+                if not opco_name:
+                    stats["not_found"] += 1
+                    continue
+
+                opco_id = get_or_create_opco(conn, cfg, opco_name)
+                if opco_id and update_company_opco(conn, cfg, company_id, opco_id):
+                    stats["updated"] += 1
+                else:
+                    stats["errors"] += 1
+            except Exception as e:
+                logger.error(f"Error processing company {company_id}: {e}")
+                stats["errors"] += 1
+
+            if (stats["updated"] + stats["not_found"] + stats["errors"]) % 100 == 0:
+                logger.info(
+                    f"OPCO from deadline progress: {stats['updated'] + stats['not_found'] + stats['errors']}/{stats['total']} "
+                    f"(updated: {stats['updated']}, not found: {stats['not_found']}, errors: {stats['errors']})"
+                )
+
+        logger.info(
+            f"OPCO enrichment from deadline completed: {stats['updated']} updated, "
+            f"{stats['not_found']} not found, {stats['errors']} errors"
+        )
+
+        return stats
+
+    except Exception as e:
+        logger.error(f"Error during OPCO enrichment from deadline: {e}")
+        return stats
 
 
 def discover_opco_resource_schema(
