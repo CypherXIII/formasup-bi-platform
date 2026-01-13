@@ -118,6 +118,32 @@ services:
       retries: 3
       start_period: 30s
 
+  backup:
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    container_name: backup-fsa
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      superset-db:
+        condition: service_healthy
+    networks:
+      - fsa-net
+    volumes:
+      - ./backups:/backups
+    environment:
+      PG_HOST: postgres-fsa
+      PG_USER: ${POSTGRES_USER}
+      PG_DB: ${POSTGRES_DB}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      SUPERSET_DB_USER: ${SUPERSET_DB_USER}
+      PGPASSWORD_SUPERSET: ${SUPERSET_DB_PASSWORD}
+      BACKUP_CRON_SCHEDULE: "${BACKUP_CRON_SCHEDULE:-0 3 * * *}"
+      BACKUP_RETENTION_DAYS: "${BACKUP_RETENTION_DAYS:-7}"
+      RUN_BACKUP_ON_START: "${RUN_BACKUP_ON_START:-false}"
+
 networks:
   fsa-net:
     driver: bridge

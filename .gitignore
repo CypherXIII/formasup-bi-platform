@@ -83,6 +83,8 @@ superset_home/
 # Backup files
 *.bak
 *.backup
+backups/*.dump
+!backups/.gitkeep
 
 # Database dumps
 *.sql
