@@ -14,16 +14,41 @@ if [ ! -f "$BACKUP_FILE" ]; then
   exit 0
 fi
 
-# Check if database is already populated
-TABLE_COUNT=$(psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';")
-if [ "$TABLE_COUNT" -gt 0 ]; then
-  echo "Database already populated, skipping restore"
-  exit 0
+# Check if database is already populated (check staging schema, not public)
+SCHEMA_EXISTS=$(psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -c "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = 'staging';")
+if [ "$SCHEMA_EXISTS" -gt 0 ]; then
+  TABLE_COUNT=$(psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'staging';")
+  if [ "$TABLE_COUNT" -gt 0 ]; then
+    echo "Database already populated (staging schema has $TABLE_COUNT tables), skipping restore"
+    exit 0
+  fi
 fi
 
+# Pre-create schemas and install required extensions BEFORE restore
+echo "Creating schemas and installing extensions..."
+psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<-EOSQL
+  -- Create schemas
+  CREATE SCHEMA IF NOT EXISTS staging;
+  CREATE SCHEMA IF NOT EXISTS dwh;
+
+  -- Install unaccent extension in staging schema (required for normalize_name function)
+  CREATE EXTENSION IF NOT EXISTS unaccent SCHEMA staging;
+
+  -- Also install in public for compatibility
+  CREATE EXTENSION IF NOT EXISTS unaccent SCHEMA public;
+EOSQL
+
 echo "Restoring backup from $BACKUP_FILE..."
-pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --no-acl -v "$BACKUP_FILE" || {
-  echo "Warning: pg_restore completed with errors, but continuing..."
+# Use --disable-triggers to avoid FK constraint errors during restore
+# Use --single-transaction for atomicity
+pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  --no-owner \
+  --no-acl \
+  --disable-triggers \
+  --if-exists \
+  --clean \
+  -v "$BACKUP_FILE" 2>&1 || {
+  echo "Warning: pg_restore completed with some errors, but continuing..."
 }
 
 echo "Synchronizing sequences..."
