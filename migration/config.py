@@ -85,6 +85,7 @@ class Config:
 
 # Table structure
 CONFLICT_KEYS = {
+    "city": "id",
     "cerfa_param": "id",
     "degree_level": "id",
     "degree": "id",
@@ -106,7 +107,14 @@ CONFLICT_KEYS = {
     "billing_line": "id",
 }
 
+# Tables that should never be synced to staging (they are reference data)
+# - city: Reference data, IDs are remapped during cleanup
+# - company: Only SIRETs are migrated, rest is handled by API enrichment
+#            Cleanup handles SIRET deduplication and ID mapping
+PROTECTED_TABLES = {"city", "company"}
+
 TABLE_ORDER = [
+    "city",
     "cerfa_param",
     "degree_level",
     "degree",

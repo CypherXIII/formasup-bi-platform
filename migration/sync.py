@@ -12,9 +12,9 @@ import logging
 import time
 from typing import Dict, List
 
-import psycopg2
+import psycopg2 # type: ignore
 
-from config import Config, CONFLICT_KEYS, TABLE_ORDER
+from config import Config, CONFLICT_KEYS, TABLE_ORDER, PROTECTED_TABLES
 from database import get_pg_columns, transaction
 
 
@@ -36,6 +36,7 @@ def sync_tables(
     @note For tables that are not fundamental dimensions, records
           that no longer exist in the temporary tables are deleted
           from the main tables.
+    @note Tables in PROTECTED_TABLES are skipped (reference data).
     """
     logger = logging.getLogger("migration")
     logger.info(
@@ -44,7 +45,7 @@ def sync_tables(
 
     stats: Dict[str, Dict[str, int]] = {}
 
-    for table in [t for t in TABLE_ORDER if t != "city"]:
+    for table in [t for t in TABLE_ORDER if t not in PROTECTED_TABLES]:
         if table not in tables:
             continue
 
@@ -159,7 +160,7 @@ def sync_tables(
                 cur.execute(
                     f"""
                 INSERT INTO {cfg.pg_schema}.update_log (
-                    migration_name, table_name, inserted, updates, deletes, 
+                    migration_name, table_name, inserted, updates, deletes,
                     final_count, duration_seconds, success, error
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,

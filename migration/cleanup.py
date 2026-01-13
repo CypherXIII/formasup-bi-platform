@@ -11,7 +11,7 @@ tables before synchronization with the main tables.
 import logging
 from typing import List, Tuple, Callable
 
-import psycopg2
+import psycopg2 # type: ignore
 
 from config import Config
 
@@ -81,12 +81,12 @@ def cleanup_apprentice_city(
             # Create a mapping table between temporary and valid city IDs
             cur.execute(f"""
             DROP TABLE IF EXISTS temp_city_mapping;
-            
-            SELECT 
+
+            SELECT
                 ct.id AS temp_city_id,
                 c.id AS valid_city_id
             INTO TEMP TABLE temp_city_mapping
-            FROM {cfg.temp_schema}.city ct 
+            FROM {cfg.temp_schema}.city ct
             JOIN {cfg.pg_schema}.city c ON ct.code = c.code
             WHERE ct.id != c.id;
             """)
@@ -139,11 +139,11 @@ def run_specific_cleanup(conn_pg: psycopg2.extensions.connection, cfg: Config) -
             # Create a temporary table for duplicate mappings
             cur.execute(f"""
             DROP TABLE IF EXISTS {schema}.company_duplicate_map;
-            
+
             WITH duplicates AS (
                 SELECT id, siret, updated_at,
                     ROW_NUMBER() OVER (
-                        PARTITION BY siret 
+                        PARTITION BY siret
                         ORDER BY updated_at DESC, id DESC
                     ) AS rank
                 FROM {schema}.company
