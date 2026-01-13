@@ -21,7 +21,7 @@ import time
 from datetime import date, datetime
 from pathlib import Path
 
-from api_enrichment import api_enrich_companies, add_company_fk_to_company_info
+from api_enrichment import api_enrich_companies
 from cleanup import run_cleanup
 from config import Config, TABLE_ORDER
 from database import mariadb_connection, postgres_connection
@@ -234,8 +234,6 @@ def run_migration_cycle(args: argparse.Namespace, cfg: Config, logger: "logging.
 
             # API enrichment after synchronization
             if cfg.api_enabled:
-                # Ensure company_info is properly linked to company
-                add_company_fk_to_company_info(pg_conn, cfg)
                 api_stats = api_enrich_companies(pg_conn, cfg)
                 logger.info("Company API summary: %s", json.dumps(api_stats))
 

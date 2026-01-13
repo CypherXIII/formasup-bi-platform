@@ -6,7 +6,6 @@ SELECT setval('staging.billing_payment_id_seq', (SELECT COALESCE(MAX(id), 1) FRO
 SELECT setval('staging.cerfa_param_id_seq', (SELECT COALESCE(MAX(id), 1) FROM staging.cerfa_param));
 SELECT setval('staging.city_id_seq', (SELECT COALESCE(MAX(id), 1) FROM staging.city));
 SELECT setval('staging.company_id_seq', (SELECT COALESCE(MAX(id), 1) FROM staging.company));
-SELECT setval('staging.company_info_id_seq', (SELECT COALESCE(MAX(id), 1) FROM staging.company_info));
 SELECT setval('staging.component_id_seq', (SELECT COALESCE(MAX(id), 1) FROM staging.component));
 SELECT setval('staging.deadline_id_seq', (SELECT COALESCE(MAX(id), 1) FROM staging.deadline));
 SELECT setval('staging.degree_id_seq', (SELECT COALESCE(MAX(id), 1) FROM staging.degree));

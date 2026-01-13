@@ -466,10 +466,7 @@ def _get_sirets_to_process(
                 FROM {cfg.pg_schema}.company c
                 WHERE c.siret IS NOT NULL
                 AND c.siret != ''
-                AND c.siret NOT IN (
-                    SELECT siret FROM {cfg.pg_schema}.company_info
-                    WHERE siret IS NOT NULL
-                )
+                AND c.name IS NULL
                 {limit_clause}
             """
 
@@ -589,27 +586,23 @@ def _process_single_siret(
         type_id = find_type_id(conn_pg, cfg, api_data.get("type"))
         workforce = _convert_workforce_range(api_data.get("workforce_range"))
 
-        # Insert into company_info
+        # Update company table directly with enriched data
         with transaction(conn_pg) as cur:
             cur.execute(
                 f"""
-                INSERT INTO {cfg.pg_schema}.company_info (
-                    id, siret, name, naf_id, idcc_id, city_id,
-                    workforce, category, type_id, updated_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
-                ON CONFLICT (siret) DO UPDATE SET
-                    name = EXCLUDED.name,
-                    naf_id = EXCLUDED.naf_id,
-                    idcc_id = EXCLUDED.idcc_id,
-                    city_id = EXCLUDED.city_id,
-                    workforce = EXCLUDED.workforce,
-                    category = EXCLUDED.category,
-                    type_id = EXCLUDED.type_id,
+                UPDATE {cfg.pg_schema}.company
+                SET
+                    name = %s,
+                    naf_id = NULLIF(%s, 0),
+                    idcc_id = NULLIF(%s, 0),
+                    city_id = NULLIF(%s, 0),
+                    workforce = %s,
+                    category = %s,
+                    type_id = NULLIF(%s, 0),
                     updated_at = NOW()
+                WHERE id = %s
             """,
                 (
-                    company_id,
-                    siret,
                     api_data.get("name"),
                     naf_id,
                     idcc_id,
@@ -617,6 +610,7 @@ def _process_single_siret(
                     workforce,
                     api_data.get("category"),
                     type_id,
+                    company_id,
                 ),
             )
 
@@ -1044,62 +1038,10 @@ def get_or_create_opco(
         return None
 
 
-def add_company_fk_to_company_info(
+def add_opco_fk_to_company(
     conn: psycopg2.extensions.connection, cfg: Config
 ) -> bool:
-    """! @brief Adds the foreign key constraint linking company_info.id to company.id.
-    @param conn Active PostgreSQL connection.
-    @param cfg Configuration containing the schema.
-    @return True if the constraint exists or was added, False in case of an error.
-    @note The company_info.id and company.id share the same value by design.
-    """
-    logger = logging.getLogger("migration")
-
-    constraint_name = "fk_company_info_company"
-
-    try:
-        with transaction(conn) as cur:
-            # Check if the constraint already exists
-            cur.execute(
-                """
-                SELECT constraint_name
-                FROM information_schema.table_constraints
-                WHERE table_schema = %s
-                  AND table_name = 'company_info'
-                  AND constraint_name = %s
-                  AND constraint_type = 'FOREIGN KEY'
-                """,
-                (cfg.pg_schema, constraint_name),
-            )
-
-            if cur.fetchone():
-                logger.debug(
-                    f"Foreign key constraint {constraint_name} already exists"
-                )
-                return True
-
-            cur.execute(
-                f"""
-                ALTER TABLE {cfg.pg_schema}.company_info
-                ADD CONSTRAINT {constraint_name}
-                FOREIGN KEY (id) REFERENCES {cfg.pg_schema}.company(id)
-                ON DELETE CASCADE
-                """
-            )
-            logger.info(
-                f"Foreign key constraint {constraint_name} added to company_info"
-            )
-            return True
-
-    except Exception as e:
-        logger.error(f"Error adding FK constraint to company_info: {e}")
-        return False
-
-
-def add_opco_fk_to_company_info(
-    conn: psycopg2.extensions.connection, cfg: Config
-) -> bool:
-    """! @brief Adds the opco_id (FK) column to the company_info table if it does not exist.
+    """! @brief Adds the opco_id (FK) column to the company table if it does not exist.
     @param conn Active PostgreSQL connection.
     @param cfg Configuration containing the schema.
     @return True if the column exists or was added, False in case of an error.
@@ -1113,40 +1055,40 @@ def add_opco_fk_to_company_info(
                 SELECT column_name
                 FROM information_schema.columns
                 WHERE table_schema = %s
-                  AND table_name = 'company_info'
+                  AND table_name = 'company'
                   AND column_name = 'opco_id'
                 """,
                 (cfg.pg_schema,),
             )
 
             if cur.fetchone():
-                logger.debug("opco_id column already exists in company_info")
+                logger.debug("opco_id column already exists in company")
                 return True
 
             cur.execute(
                 f"""
-                ALTER TABLE {cfg.pg_schema}.company_info
+                ALTER TABLE {cfg.pg_schema}.company
                 ADD COLUMN opco_id INTEGER REFERENCES {cfg.pg_schema}.opco(id)
                 """
             )
-            logger.info("opco_id column added to company_info")
+            logger.info("opco_id column added to company")
             return True
 
     except Exception as e:
-        logger.error(f"Error adding opco_id to company_info: {e}")
+        logger.error(f"Error adding opco_id to company: {e}")
         return False
 
 
 def update_company_opco(
     conn: psycopg2.extensions.connection,
     cfg: Config,
-    company_info_id: int,
+    company_id: int,
     opco_id: int,
 ) -> bool:
     """! @brief Updates a company's OPCO.
     @param conn Active PostgreSQL connection.
     @param cfg Configuration containing the schema.
-    @param company_info_id ID of the company in company_info.
+    @param company_id ID of the company.
     @param opco_id ID of the OPCO.
     @return True if the update was successful, False otherwise.
     """
@@ -1154,16 +1096,16 @@ def update_company_opco(
         with transaction(conn) as cur:
             cur.execute(
                 f"""
-                UPDATE {cfg.pg_schema}.company_info
+                UPDATE {cfg.pg_schema}.company
                 SET opco_id = %s
                 WHERE id = %s
                 """,
-                (opco_id, company_info_id),
+                (opco_id, company_id),
             )
             return True
     except Exception as e:
         logging.getLogger("migration").error(
-            f"Error updating OPCO for company_info {company_info_id}: {e}"
+            f"Error updating OPCO for company {company_id}: {e}"
         )
         return False
 
@@ -1188,19 +1130,19 @@ def enrich_companies_with_opco(
 
     # Ensure structures exist
     ensure_opco_table(conn, cfg)
-    if not add_opco_fk_to_company_info(conn, cfg):
+    if not add_opco_fk_to_company(conn, cfg):
         logger.error("Could not add opco_id column")
         return stats
 
-    where_clause = "WHERE ci.opco_id IS NULL" if only_missing else ""
+    where_clause = "WHERE c.opco_id IS NULL" if only_missing else ""
 
     with transaction(conn) as cur:
         cur.execute(
             f"""
-            SELECT ci.id, ci.siret
-            FROM {cfg.pg_schema}.company_info ci
+            SELECT c.id, c.siret
+            FROM {cfg.pg_schema}.company c
             {where_clause}
-            ORDER BY ci.id
+            ORDER BY c.id
             """
         )
         companies = cur.fetchall()
@@ -1254,9 +1196,9 @@ def get_opco_stats(
     with transaction(conn) as cur:
         cur.execute(
             f"""
-            SELECT o.name, COUNT(ci.id) as count
+            SELECT o.name, COUNT(c.id) as count
             FROM {cfg.pg_schema}.opco o
-            LEFT JOIN {cfg.pg_schema}.company_info ci ON ci.opco_id = o.id
+            LEFT JOIN {cfg.pg_schema}.company c ON c.opco_id = o.id
             GROUP BY o.name
             ORDER BY count DESC
             """
@@ -1270,11 +1212,11 @@ def enrich_companies_with_opco_from_deadline(
     batch_size: int = 100,
     only_missing: bool = True,
 ) -> Dict[str, int]:
-    """! @brief Enriches company_info with OPCO data derived from deadline/billing and registration tables.
+    """! @brief Enriches company with OPCO data derived from deadline/billing and registration tables.
     This function uses existing data relationships instead of API calls.
     The OPCO is retrieved via deadline -> registration -> opco_address -> opco chain,
     similar to the extract.py billing report query.
-    Links company_info to company via SIRET, then to registration via host_company_id.
+    Uses company table directly via host_company_id.
     @param conn Active PostgreSQL connection.
     @param cfg Configuration containing the schema.
     @param batch_size Number of companies to process per batch.
@@ -1287,28 +1229,27 @@ def enrich_companies_with_opco_from_deadline(
     try:
         # Ensure structures exist
         ensure_opco_table(conn, cfg)
-        if not add_opco_fk_to_company_info(conn, cfg):
+        if not add_opco_fk_to_company(conn, cfg):
             logger.error("Could not add opco_id column")
             return stats
 
         # Query to find OPCO for each company using deadline and registration data
         # This mirrors the approach used in extract.py for billing forecasts
-        # Link: company_info -> company (via SIRET) -> registration -> opco_address -> opco
+        # Link: company -> registration -> opco_address -> opco
         with transaction(conn) as cur:
             cur.execute(
                 f"""
                 SELECT DISTINCT
-                    ci.id,
-                    ci.siret,
+                    c.id,
+                    c.siret,
                     o.name AS opco_name
-                FROM {cfg.pg_schema}.company_info ci
-                INNER JOIN {cfg.pg_schema}.company c ON c.siret = ci.siret
+                FROM {cfg.pg_schema}.company c
                 INNER JOIN {cfg.pg_schema}.registration r ON r.host_company_id = c.id
                 INNER JOIN {cfg.pg_schema}.opco_address oa ON r.opco_address_id = oa.id
                 INNER JOIN {cfg.pg_schema}.opco o ON oa.opco_id = o.id
-                WHERE ci.opco_id IS NULL
+                WHERE c.opco_id IS NULL
                 AND o.name IS NOT NULL
-                ORDER BY ci.id
+                ORDER BY c.id
                 """
             )
             opco_mappings = cur.fetchall()
