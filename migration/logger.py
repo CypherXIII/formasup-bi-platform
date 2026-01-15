@@ -15,6 +15,15 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 
+def _resolve_log_level(env_value: str | None, default: int) -> int:
+    """Resolve a logging level name (e.g., "DEBUG") to its numeric value."""
+    if not env_value:
+        return default
+
+    level = logging.getLevelName(env_value.upper())
+    return level if isinstance(level, int) else default
+
+
 def setup_logger(log_file: str) -> logging.Logger:
     """! @brief Configures and returns a logger with formatting and rotation.
     @param log_file Path to the log file.
@@ -25,8 +34,11 @@ def setup_logger(log_file: str) -> logging.Logger:
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
     logger = logging.getLogger("migration")
-    logger.setLevel(logging.INFO)
-    fmt = logging.Formatter("%(asctime)s | %(levelname)-8s | %(message)s")
+    log_level = _resolve_log_level(os.getenv("MIGRATION_LOG_LEVEL"), logging.INFO)
+    logger.setLevel(log_level)
+    fmt = logging.Formatter(
+        "%(asctime)s | %(levelname)-8s | pid=%(process)d | %(name)s | %(message)s"
+    )
 
     # Avoid duplicates if the configuration is called multiple times
     if not logger.handlers:
@@ -55,10 +67,13 @@ def setup_db_logger(metrics_log_file: str) -> logging.Logger:
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
     db_logger = logging.getLogger("migration.db")
-    db_logger.setLevel(logging.INFO)
+    log_level = _resolve_log_level(os.getenv("MIGRATION_LOG_LEVEL"), logging.INFO)
+    db_logger.setLevel(log_level)
     db_logger.propagate = False  # avoid duplication to the parent logger
 
-    fmt = logging.Formatter("%(asctime)s | %(levelname)-8s | %(message)s")
+    fmt = logging.Formatter(
+        "%(asctime)s | %(levelname)-8s | pid=%(process)d | %(name)s | %(message)s"
+    )
 
     # Avoid adding multiple handlers if called multiple times
     if not db_logger.handlers:

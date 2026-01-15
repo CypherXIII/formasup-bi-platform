@@ -184,10 +184,13 @@ OPCO_RESOURCE_ID=default_resource_id
 # Logging
 # =============================================================================
 MIGRATION_LOG=migration.log
+MIGRATION_LOG_LEVEL=INFO
 ENABLE_DB_METRICS=true
 DB_METRICS_SLOW_MS=200
 DB_METRICS_LOG=db_metrics.log
 ```
+
+Logs include the process id and logger name for correlation; set `MIGRATION_LOG_LEVEL=DEBUG` when troubleshooting.
 
 ### Configuration Parameters
 
@@ -196,6 +199,7 @@ DB_METRICS_LOG=db_metrics.log
 | `BATCH_SIZE`              | Records per batch insert     | 500     |
 | `API_REQUESTS_PER_SECOND` | API rate limit               | 7       |
 | `DB_METRICS_SLOW_MS`      | Slow query threshold (ms)    | 200     |
+| `MIGRATION_LOG_LEVEL`     | Log level (DEBUG/INFO/WARN)  | INFO    |
 
 ---
 
