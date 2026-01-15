@@ -4,9 +4,9 @@
 
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
 [![Python](https://img.shields.io/badge/Python-3.10+-green)](https://www.python.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue)](https://www.postgresql.org/)
 [![Superset](https://img.shields.io/badge/Superset-6.0.0-orange)](https://superset.apache.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-79%20Passed-brightgreen)](#testing)
 
 ---
 
@@ -19,6 +19,7 @@
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
 - [Security](#security)
+- [Backup and Recovery](#backup-and-recovery)
 - [VPS Deployment](#vps-deployment)
 - [Testing](#testing)
 - [Development](#development)
@@ -60,15 +61,16 @@ A production-ready Business Intelligence platform based on Apache Superset 6.0.0
 ### Data Migration
 
 - **MariaDB to PostgreSQL migration** with intelligent deduplication
-- **API enrichment** for company data via French government APIs
-- **Unified company table** (staging and enriched data merged)
+- **API enrichment** for company data via French government APIs (INSEE, Recherche Entreprises)
+- **OPCO enrichment** for apprenticeship data (optional)
+- **SIRET validation and correction** with detailed reporting
 - **Batch processing** with rate limiting and performance optimization
 - **Comprehensive logging** and error handling
 
-### Backup & Recovery
+### Backup and Recovery
 
-- **Automated daily backups** at 3 AM (configurable)
-- **Multi-schema support** (staging + dwh)
+- **Automated daily backups** at 3 AM (configurable via cron expression)
+- **Multi-database support** (business data + Superset metadata)
 - **Configurable retention** (default: 7 days)
 - **One-command restore** from backup files
 
@@ -85,10 +87,11 @@ A production-ready Business Intelligence platform based on Apache Superset 6.0.0
 
 ```text
 formasup-bi-platform/
-├── docker-compose.yml          # Service orchestration
+├── docker-compose.yml          # Service orchestration (development)
 ├── docker-compose.prod.yml     # Production configuration
 ├── .env.example                # Environment template
 ├── README.md                   # This documentation
+├── AI_GUIDE.md                 # AI assistants guidelines
 ├── run-tests.ps1               # PowerShell test runner
 ├── run-tests.sh                # Bash test runner
 │
@@ -97,19 +100,17 @@ formasup-bi-platform/
 │   ├── superset.service        # systemd service file
 │   └── README.md               # Deployment documentation
 │
-├── backup/                     # Automated backup service (code)
+├── backup/                     # Automated backup service
 │   ├── Dockerfile              # Backup container
 │   ├── backup.sh               # Backup script
 │   ├── entrypoint.sh           # Container entrypoint
 │   └── README.md               # Backup documentation
 │
-├── backups-files/              # Temporary backup staging (git-ignored, external transfer)
-│   └── .gitkeep                # Keep directory in git
+├── backups-files/              # Backup storage directory (git-ignored)
+│   └── *.dump                  # PostgreSQL backup files
 │
 ├── init/                       # PostgreSQL initialization scripts
-│   ├── backup.dump             # Latest database backup
-│   ├── merge_company_tables.sql # Company table migration
-│   └── sync_sequences.sql      # Sequence synchronization
+│   └── restore_backup.sh       # Database restore script
 │
 ├── migration/                  # Data migration tools
 │   ├── migrate.py              # Main entry point
@@ -121,46 +122,50 @@ formasup-bi-platform/
 │   ├── cleanup.py              # Data cleaning functions
 │   ├── sync.py                 # Table synchronization
 │   ├── temp_tables.py          # Temporary table management
+│   ├── siret_correction.py     # SIRET validation/correction
 │   ├── logger.py               # Logging configuration
 │   ├── Dockerfile              # Migration container
 │   ├── requirements.txt        # Python dependencies
 │   ├── README.md               # Migration documentation
 │   └── tests/                  # Test suite
-│       ├── conftest.py
-│       ├── test_database.py
-│       ├── test_integration.py
-│       ├── test_migration.py
-│       └── test_utils.py
+│       ├── conftest.py         # Test fixtures
+│       ├── test_database.py    # Database tests
+│       ├── test_integration.py # Integration tests
+│       ├── test_migration.py   # Migration tests
+│       ├── test_opco_tabular.py # OPCO enrichment tests
+│       ├── test_siret_correction.py # SIRET tests
+│       └── test_utils.py       # Utility tests
 │
 └── superset/                   # Superset configuration
-    ├── apache-superset-src/    # Superset 6.0.0 source
+    ├── apache-superset-src/    # Superset 6.0.0 source (DO NOT MODIFY)
     ├── config/                 # Custom configuration
     │   └── superset_config.py  # Superset settings
     ├── docker/                 # Docker files
     │   └── Dockerfile          # Custom Superset image
     ├── locales/                # French translations
     │   └── backup-messages.po  # Translation backup
-    ├── scripts/                # Build scripts
-    │   └── build-superset-fr.ps1
+    ├── scripts/                # Build and setup scripts
+    │   ├── build-superset-fr.ps1  # French build script
+    │   ├── check_themes.py     # Theme verification
+    │   └── setup_viewer_role.py # Role setup
     ├── assets/                 # Logos and branding
-    │   └── images/
-    │       ├── favicon.ico
-    │       └── logo.png
+    │   ├── images/             # Logo, favicon
+    │   └── fonts/              # Custom fonts
     ├── tests/                  # Test suite
-    │   ├── test_config.py
-    │   └── test_build.py
+    │   ├── test_config.py      # Configuration tests
+    │   └── test_build.py       # Build tests
     └── README.md               # Superset documentation
 ```
 
 ### Services
 
-| Service       | Container       | Port  | Description                    |
-|---------------|-----------------|-------|--------------------------------|
-| Superset      | superset-fsa    | 8088  | BI dashboards and SQL Lab      |
-| PostgreSQL    | postgres-fsa    | 5432  | Business data database         |
-| Superset DB   | superset-db     | 5442  | Superset metadata database     |
-| Migration     | migration-fsa   | -     | Data migration service         |
-| Backup        | backup-fsa      | -     | Daily automated backups        |
+| Service       | Container       | Port  | Description                          |
+|---------------|-----------------|-------|--------------------------------------|
+| Superset      | superset-fsa    | 8088  | BI dashboards and SQL Lab            |
+| PostgreSQL    | postgres-fsa    | 5432  | Business data database (PostgreSQL 17)|
+| Superset DB   | superset-db     | 5442  | Superset metadata database (PostgreSQL 15)|
+| Migration     | migration-fsa   | -     | Data migration service (scheduled)   |
+| Backup        | backup-fsa      | -     | Daily automated backups              |
 
 ---
 
@@ -168,7 +173,7 @@ formasup-bi-platform/
 
 ### System Requirements
 
-- **RAM**: 16 GB minimum (8 GB for smaller deployments)
+- **RAM**: 8 GB minimum (16 GB recommended for production)
 - **Storage**: 20 GB minimum for Docker images and data
 - **OS**: Linux (recommended), Windows 10/11, macOS
 
@@ -183,7 +188,7 @@ formasup-bi-platform/
 
 - Python 3.10+
 - pytest 7.0+
-- Node.js 18+ (if modifying Superset frontend)
+- Node.js 18+ (for building Superset French translations)
 
 ---
 
@@ -281,16 +286,33 @@ PG_SCHEMA=staging
 # Performance
 BATCH_SIZE=500
 ENABLE_API_ENRICHMENT=false
+API_REQUESTS_PER_SECOND=7
+
+# OPCO enrichment (optional)
+ENABLE_OPCO_ENRICHMENT=false
+OPCO_RESOURCE_ID=59533036-3c0b-45e6-972c-e967c0a1be17
+
+# Scheduler (hour 0-23 when migration runs daily)
+MIGRATION_RUN_HOUR=2
+
+# =============================================================================
+# BACKUP CONFIGURATION (optional)
+# =============================================================================
+
+BACKUP_CRON_SCHEDULE=0 3 * * *
+BACKUP_RETENTION_DAYS=7
+RUN_BACKUP_ON_START=false
 ```
 
 ### Configuration Files
 
-| File                                 | Purpose                     |
-|--------------------------------------|-----------------------------|
-| `docker-compose.yml`                 | Service definitions         |
-| `.env`                               | Environment variables       |
-| `superset/config/superset_config.py` | Superset configuration      |
-| `migration/.env`                     | Migration-specific settings |
+| File                                 | Purpose                       |
+|--------------------------------------|-------------------------------|
+| `docker-compose.yml`                 | Service definitions           |
+| `docker-compose.prod.yml`            | Production overrides          |
+| `.env`                               | Environment variables         |
+| `superset/config/superset_config.py` | Superset configuration        |
+| `migration/config.py`                | Migration settings            |
 
 ---
 
@@ -305,6 +327,7 @@ This project follows **secure-by-default** principles:
 3. **Network isolation**: Services communicate via internal Docker network
 4. **CSRF protection**: Enabled by default in Superset
 5. **Health checks**: Automatic service recovery
+6. **Parameterized queries**: SQL injection prevention in migration tools
 
 ### Security Warnings
 
@@ -322,6 +345,40 @@ This project follows **secure-by-default** principles:
 - Database ports are exposed by default (for development)
 - No built-in rate limiting (use reverse proxy)
 - No built-in authentication integration (LDAP/OAuth configurable)
+
+---
+
+## Backup and Recovery
+
+### Automated Backups
+
+The backup service runs daily at 3 AM by default (configurable via `BACKUP_CRON_SCHEDULE`).
+
+```bash
+# Manual backup
+docker exec backup-fsa /backup.sh
+
+# List available backups
+ls -la backups-files/
+```
+
+### Restore from Backup
+
+```bash
+# Restore business database
+docker exec -i postgres-fsa pg_restore -U postgres -d FSA < backups-files/staging_backup_YYYYMMDD_HHMMSS.dump
+
+# Or use the restore script
+./init/restore_backup.sh backups-files/staging_backup_YYYYMMDD_HHMMSS.dump
+```
+
+### Backup Configuration
+
+| Variable                | Default       | Description                    |
+|-------------------------|---------------|--------------------------------|
+| `BACKUP_CRON_SCHEDULE`  | `0 3 * * *`   | Cron expression for backup time|
+| `BACKUP_RETENTION_DAYS` | `7`           | Days to keep backup files      |
+| `RUN_BACKUP_ON_START`   | `false`       | Run backup on container start  |
 
 ---
 
@@ -433,16 +490,15 @@ sudo systemctl start superset
 
 ### Test Suites
 
-| Module     | Tests | Coverage | Description                   |
-|------------|-------|----------|-------------------------------|
-| Migration  | 54    | 80%+     | Database operations, API, etc.|
-| Superset   | 25    | 85%+     | Configuration, build scripts  |
-| **Total**  | 79    | 80%+     | All tests passing             |
+| Module     | Tests | Coverage | Description                          |
+|------------|-------|----------|--------------------------------------|
+| Migration  | 6     | 80%+     | Database, API, SIRET, OPCO tests     |
+| Superset   | 2     | 85%+     | Configuration and build tests        |
 
 ### Running Tests
 
 ```bash
-# All tests
+# All tests (recommended)
 ./run-tests.sh          # Linux/macOS
 .\run-tests.ps1         # Windows PowerShell
 
@@ -476,25 +532,44 @@ This is a monorepo containing all components:
 - **migration/**: Data migration tools (MariaDB to PostgreSQL)
 - **superset/**: Superset configuration and French translation
 - **deploy/**: VPS deployment resources
+- **backup/**: Automated backup service
 
 ### Building Custom Images
 
 ```bash
-# Rebuild Superset French image
-cd superset
-./scripts/build-superset-fr.ps1  # Windows
-cd ..
+# Build Superset French image (required first time)
+cd superset/scripts
+./build-superset-fr.ps1  # Windows PowerShell
+cd ../..
 
-# Rebuild all services
-docker compose build --no-cache
+# Build and start all services
+docker compose build
 docker compose up -d
+
+# Rebuild a specific service
+docker compose build superset
+docker compose up -d superset
+```
+
+### Migration Commands
+
+```bash
+# Run full migration
+docker exec migration-fsa python migrate.py --step migrate
+
+# Dry run (no changes)
+docker exec migration-fsa python migrate.py --step migrate --dry-run
+
+# Run specific step
+docker exec migration-fsa python migrate.py --step enrich
+docker exec migration-fsa python migrate.py --step sync
 ```
 
 ### Code Style
 
-- **Python**: PEP 8, type hints, docstrings
+- **Python**: PEP 8, type hints required, docstrings required
 - **PowerShell**: Microsoft conventions
-- **Markdown**: ATX headings, consistent formatting
+- **Markdown**: ATX headings, English only, no emojis
 
 ---
 
@@ -505,12 +580,11 @@ docker compose up -d
 #### Interface Shows English Instead of French
 
 1. Clear browser cache and cookies
-2. Rebuild image with `BUILD_TRANSLATIONS=true`
+2. Rebuild image: `docker compose build superset`
 3. Verify `superset_config.py` has correct locale settings
 
 ```bash
-cd superset && ./scripts/build-superset-fr.ps1
-docker compose up -d --build
+docker compose up -d --build superset
 ```
 
 #### Database Connection Failed
@@ -518,6 +592,7 @@ docker compose up -d --build
 1. Verify containers are running: `docker compose ps`
 2. Check health status: `docker compose logs postgres`
 3. Verify environment variables in `.env`
+4. Check network connectivity: `docker network inspect fsa-net`
 
 #### Container Keeps Restarting
 
@@ -527,13 +602,30 @@ docker compose logs superset
 
 # Check health
 docker exec superset-fsa curl http://localhost:8088/health
+
+# Check container status
+docker inspect superset-fsa --format='{{.State.Health.Status}}'
+```
+
+#### Migration Fails
+
+```bash
+# Check migration logs
+docker compose logs migration
+
+# Run in dry-run mode to diagnose
+docker exec migration-fsa python migrate.py --step migrate --dry-run
+
+# Check database connectivity
+docker exec migration-fsa python -c "from database import get_pg_connection; print(get_pg_connection())"
 ```
 
 ### Getting Help
 
 1. Check the [Troubleshooting](#troubleshooting) section
 2. Review container logs: `docker compose logs <service>`
-3. Open an issue on GitHub with logs and configuration
+3. Check [AI_GUIDE.md](AI_GUIDE.md) for development guidelines
+4. Open an issue on GitHub with logs and configuration
 
 ---
 
@@ -569,6 +661,6 @@ Types: Add, Fix, Update, Refactor, Test, Docs, Chore
 
 **Author**: Marie Challet  
 **Organization**: FormaSup Auvergne  
-**Version**: 1.0.0  
-**Date**: January 2026  
+**Version**: 2.0.0  
+**Last Updated**: January 2026  
 **Base**: Apache Superset 6.0.0
