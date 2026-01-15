@@ -11,7 +11,8 @@ It includes SIRET validation, company data retrieval, and OPCO enrichment.
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-import psycopg2 # type: ignore
+import psycopg2  # type: ignore
+import pymysql  # type: ignore
 
 from api_client import RateLimitedAPI
 from database import transaction
@@ -316,11 +317,14 @@ def find_type_id(
 
 
 def api_enrich_companies(
-    conn_pg: psycopg2.extensions.connection, cfg: Config
+    conn_pg: psycopg2.extensions.connection,
+    cfg: Config,
+    conn_maria: Optional[pymysql.connections.Connection] = None
 ) -> Dict[str, int]:
     """! @brief Updates companies with data from the API.
     @param conn_pg Active PostgreSQL connection.
     @param cfg Configuration with schema information and API settings.
+    @param conn_maria Optional MariaDB connection for SIRET correction.
     @return Dictionary containing enrichment statistics (processed, inserted, errors, etc.).
     """
     logger = logging.getLogger("migration")
@@ -336,6 +340,8 @@ def api_enrich_companies(
         "errors": 0,
         "invalid_siret": 0,
         "laposte_valid": 0,
+        "siret_suggestions_generated": 0,
+        "siret_uncorrected": 0,
     }
     error_sirets = []
     invalid_sirets = []
@@ -372,6 +378,15 @@ def api_enrich_companies(
             )
 
         _log_invalid_sirets(invalid_sirets)
+
+        # Generate correction suggestions for invalid SIRETs (no database modification)
+        if invalid_sirets and conn_maria:
+            _, uncorrected = _attempt_siret_corrections(
+                invalid_sirets, conn_maria, conn_pg, cfg, api_client
+            )
+            stats["siret_suggestions_generated"] = len(invalid_sirets) - len(uncorrected)
+            stats["siret_uncorrected"] = len(uncorrected)
+            # Note: Corrections are saved to file only, not applied to database
 
         if not valid_sirets:
             logger.info("No valid SIRETs to process")
@@ -532,6 +547,71 @@ def _log_invalid_sirets(invalid_sirets: list) -> None:
         logger.warning(
             f"Invalid La Poste SIRETs: {len(laposte_errors)} (e.g., {laposte_errors[0] if laposte_errors else 'N/A'})"
         )
+
+
+def _attempt_siret_corrections(
+    invalid_sirets: List[str],
+    conn_maria: pymysql.connections.Connection,
+    conn_pg: psycopg2.extensions.connection,
+    cfg: Config,
+    api_client: RateLimitedAPI
+) -> Tuple[List[Dict[str, Any]], List[str]]:
+    """! @brief Attempts to find corrections for invalid SIRETs (suggestions only).
+
+    Uses the city information from MariaDB to filter API results and find the correct SIRET.
+    NOTE: This function does NOT modify the database. It only generates suggestions
+    to facilitate manual correction.
+
+    @param invalid_sirets List of invalid SIRETs to correct.
+    @param conn_maria Active MariaDB connection for city lookup.
+    @param conn_pg Active PostgreSQL connection (unused, kept for signature compatibility).
+    @param cfg Configuration with schema information.
+    @param api_client API client with rate limiting.
+    @return Tuple of (list of correction suggestions, list of uncorrected SIRETs).
+    """
+    logger = logging.getLogger("migration")
+    logger.info("=== Generating SIRET Correction Suggestions ===")
+
+    # Import the correction module
+    from siret_correction import (
+        correct_invalid_sirets_batch,
+        write_correction_report
+    )
+
+    # Filter to only Luhn errors (format errors cannot be corrected)
+    correctable_sirets = [
+        s for s in invalid_sirets
+        if len(s) == 14 and s.isdigit()
+    ]
+
+    if not correctable_sirets:
+        logger.info("No correctable SIRETs found (all have format errors)")
+        return [], invalid_sirets
+
+    logger.info(f"Searching corrections for {len(correctable_sirets)} SIRETs with Luhn errors")
+
+    # Attempt to find corrections (suggestions only, no database modification)
+    corrections, uncorrected = correct_invalid_sirets_batch(
+        correctable_sirets,
+        conn_maria,
+        api_client,
+        max_distance=2
+    )
+
+    # Write correction report for manual review
+    write_correction_report(corrections, uncorrected, "siret_corrections.txt")
+
+    # Include format errors in uncorrected list
+    format_errors = [s for s in invalid_sirets if len(s) != 14 or not s.isdigit()]
+    all_uncorrected = uncorrected + format_errors
+
+    logger.info(
+        f"SIRET correction suggestions: {len(corrections)} found, {len(all_uncorrected)} without suggestion"
+    )
+    logger.info("Corrections saved to siret_corrections.txt for manual review")
+
+    # Return empty corrections list so they are NOT processed automatically
+    return [], invalid_sirets
 
 
 def _process_single_siret(
