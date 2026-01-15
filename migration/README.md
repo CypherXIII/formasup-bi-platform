@@ -183,11 +183,11 @@ OPCO_RESOURCE_ID=default_resource_id
 # =============================================================================
 # Logging
 # =============================================================================
-MIGRATION_LOG=migration.log
+MIGRATION_LOG=logs/migration.log
 MIGRATION_LOG_LEVEL=INFO
 ENABLE_DB_METRICS=true
 DB_METRICS_SLOW_MS=200
-DB_METRICS_LOG=db_metrics.log
+DB_METRICS_LOG=logs/db_metrics.log
 ```
 
 Logs include the process id and logger name for correlation; set `MIGRATION_LOG_LEVEL=DEBUG` when troubleshooting.
@@ -378,8 +378,8 @@ After migration with API enrichment enabled, the following files are created:
 
 | File | Purpose | Format |
 |------|---------|--------|
-| `migration.log` | Main migration log with all events | Text log |
-| `db_metrics.log` | Database query metrics and performance | Text log |
+| `logs/migration.log` | Main migration log with all events | Text log |
+| `logs/db_metrics.log` | Database query metrics and performance | Text log |
 | `siret_corrections.txt` | SIRET correction suggestions for manual review | Text report |
 | `siret_invalid.txt` | List of invalid SIRETs (Luhn errors, no correction) | Text list |
 | `siret_errors_api.txt` | SIRETs with API retrieval errors | Text list |

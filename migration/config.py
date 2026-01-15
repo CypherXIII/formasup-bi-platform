@@ -31,13 +31,13 @@ class Config:
     pg_db: str = os.getenv("PG_DB", "")
     pg_schema: str = os.getenv("PG_SCHEMA", "staging")
     batch_size: int = int(os.getenv("BATCH_SIZE", "500"))
-    log_file: str = os.getenv("MIGRATION_LOG", "migration.log")
+    log_file: str = os.getenv("MIGRATION_LOG", "logs/migration.log")
     temp_schema: str = os.getenv("PG_TEMP_SCHEMA", "temp_staging")
 
     # DB Metrics (MariaDB)
     enable_db_metrics: bool = os.getenv("ENABLE_DB_METRICS", "true").lower() == "true"
     db_metrics_slow_ms: int = int(os.getenv("DB_METRICS_SLOW_MS", "200"))
-    db_metrics_log_file: str = os.getenv("DB_METRICS_LOG", "db_metrics.log")
+    db_metrics_log_file: str = os.getenv("DB_METRICS_LOG", "logs/db_metrics.log")
 
     requests_per_second: int = int(os.getenv("API_REQUESTS_PER_SECOND", "7"))
     api_enabled: bool = os.getenv("ENABLE_API_ENRICHMENT", "false").lower() == "true"
