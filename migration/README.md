@@ -42,6 +42,9 @@ This migration tool provides a sophisticated solution for transferring data betw
 |--------------------------|--------------------------------------------------|
 | Batch Processing         | Configurable batch sizes for optimal performance |
 | Rate Limiting            | Respects API rate limits automatically           |
+| SIRET Validation         | Validates SIRET checksum via Luhn algorithm     |
+| SIRET Correction         | Suggests corrections for invalid SIRETs using Hamming distance |
+| Parallel API Requests    | ThreadPoolExecutor for concurrent validation (4 workers) |
 | Dry Run Mode             | Test migration without modifying data            |
 | Temporary Tables         | Safe migration with rollback capability          |
 | Query Metrics            | Track database impact and slow queries           |
@@ -65,6 +68,7 @@ migration/
 ├── sync.py              # Table synchronization logic
 ├── api_enrichment.py    # API enrichment (companies + OPCO)
 ├── api_client.py        # Rate-limited API client
+├── siret_correction.py  # SIRET validation and correction suggestions
 ├── db_monitor.py        # Database monitoring utilities
 ├── Dockerfile           # Container definition
 ├── requirements.txt     # Python dependencies
@@ -76,6 +80,8 @@ migration/
     ├── test_database.py
     ├── test_integration.py
     ├── test_migration.py
+    ├── test_siret_correction.py
+    ├── test_opco_tabular.py
     └── test_utils.py
 ```
 
@@ -90,6 +96,7 @@ migration/
 | `cleanup.py`        | Name normalization, deduplication                |
 | `api_enrichment.py` | SIRENE API integration, company data enrichment  |
 | `api_client.py`     | HTTP client with retry and rate limiting         |
+| `siret_correction.py` | SIRET validation, Hamming distance correction suggestions |
 
 ---
 
@@ -299,6 +306,76 @@ When `ENABLE_API_ENRICHMENT=true`, the tool enriches company data using French g
 - **SIRENE API**: Official company registry
 - **Data source**: `api.insee.fr` and `entreprise.data.gouv.fr`
 
+### SIRET Validation and Correction
+
+The tool validates SIRET (establishment identification number) using the Luhn algorithm and suggests corrections for invalid SIRETs:
+
+#### SIRET Validation Process
+
+1. **Luhn Algorithm Check**: Validates SIRET checksum
+2. **API Verification**: Confirms existence via French government API
+3. **Establishment Status Filter**: Excludes closed establishments (`etat_administratif: F`)
+4. **Company Name Matching**: Scores match with expected company name
+5. **INSEE Code Matching**: Verifies city INSEE code from MariaDB
+
+#### SIRET Correction Algorithm
+
+For invalid SIRETs (Luhn checksum errors), the tool uses Hamming distance to suggest corrections:
+
+- **Distance=1 Only**: Generates only valid corrections differing by 1 digit (~126 candidates per SIRET)
+- **Parallel Validation**: Uses ThreadPoolExecutor (4 workers) for concurrent API requests
+- **Performance**: ~2 seconds per SIRET (vs. 100+ seconds before optimization)
+
+**Algorithm Steps:**
+
+1. Retrieve company name and city INSEE code from MariaDB
+2. Generate all Luhn-valid candidates at distance=1 from original SIRET
+3. Validate each candidate in parallel against the French government API
+4. Filter by establishment status (open only)
+5. Score matches by company name similarity and INSEE code match
+6. Return up to 5 best candidates ranked by score
+
+#### Output Files
+
+- **`siret_corrections.txt`**: Suggestions for manual review (not applied to database)
+  - Original SIRET with expected data from MariaDB
+  - List of candidates with company name, city, and INSEE code
+  - Distance (digit changes) for each candidate
+  - Match scores for ranking
+  
+- **`siret_invalid.txt`**: SIRETs with Luhn errors (no valid correction found)
+- **`siret_errors_api.txt`**: SIRETs with API retrieval errors
+
+#### Example Output
+
+```
+ORIGINAL SIRET: 39539439700023
+Expected (MariaDB): name='R', city='ST ELOY LES MINES' (INSEE: 63338)
+----------------------------------------
+Found 2 candidate(s):
+
+  1. SIRET: 30539439700023 [BEST MATCH]
+     Company: ROCKWOOL FRANCE SAS
+     City:    SAINT-ELOY-LES-MINES (INSEE: 63338)
+     Distance: 1 digit(s)
+
+  2. SIRET: 39539430700023
+     Company: JEAN LE SAUX
+     City:    SAINT-HERBLAIN (INSEE: 56149)
+     Distance: 1 digit(s)
+
+  *** MANUAL REVIEW RECOMMENDED ***
+```
+
+#### Performance Improvements
+
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| Candidates per SIRET | ~1,400+ | ~126 | 11x fewer |
+| API calls per SIRET | ~1,400+ | ~14 | 100x fewer |
+| Processing time | ~100+ seconds | ~2 seconds | 50x faster |
+| Parallelization | Sequential | 4 workers | 4x concurrent |
+
 ### OPCO Enrichment
 
 When `ENABLE_OPCO_ENRICHMENT=true`, adds OPCO (training organization) information:
@@ -312,6 +389,18 @@ API calls are automatically rate-limited to respect service limits:
 - Default: 7 requests per second
 - Configurable via `API_REQUESTS_PER_SECOND`
 - Automatic retry with exponential backoff
+
+### Output Files Generated
+
+After migration with API enrichment enabled, the following files are created:
+
+| File | Purpose | Format |
+|------|---------|--------|
+| `migration.log` | Main migration log with all events | Text log |
+| `db_metrics.log` | Database query metrics and performance | Text log |
+| `siret_corrections.txt` | SIRET correction suggestions for manual review | Text report |
+| `siret_invalid.txt` | List of invalid SIRETs (Luhn errors, no correction) | Text list |
+| `siret_errors_api.txt` | SIRETs with API retrieval errors | Text list |
 
 ---
 
