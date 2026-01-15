@@ -234,7 +234,7 @@ def run_migration_cycle(args: argparse.Namespace, cfg: Config, logger: "logging.
 
             # API enrichment after synchronization
             if cfg.api_enabled:
-                api_stats = api_enrich_companies(pg_conn, cfg)
+                api_stats = api_enrich_companies(pg_conn, cfg, ma_conn)
                 logger.info("Company API summary: %s", json.dumps(api_stats))
 
             # Log synchronization statistics

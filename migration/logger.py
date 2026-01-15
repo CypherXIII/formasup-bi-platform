@@ -9,8 +9,10 @@ including a main logger and a dedicated logger for database metrics.
 """
 
 import logging
+import os
 import sys
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 
 def setup_logger(log_file: str) -> logging.Logger:
@@ -18,6 +20,10 @@ def setup_logger(log_file: str) -> logging.Logger:
     @param log_file Path to the log file.
     @return Configured logger.
     """
+    # Ensure log directory exists
+    log_path = Path(log_file)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
     logger = logging.getLogger("migration")
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter("%(asctime)s | %(levelname)-8s | %(message)s")
@@ -38,12 +44,16 @@ def setup_logger(log_file: str) -> logging.Logger:
 
 def setup_db_logger(metrics_log_file: str) -> logging.Logger:
     """! @brief Configures a child logger dedicated to MariaDB SQL metrics.
-    
+
     - Logger name: "migration.db"
     - Only writes to a dedicated file (no propagation to the console)
     @param metrics_log_file Path to the database metrics log file.
     @return Configured database logger.
     """
+    # Ensure log directory exists
+    log_path = Path(metrics_log_file)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
     db_logger = logging.getLogger("migration.db")
     db_logger.setLevel(logging.INFO)
     db_logger.propagate = False  # avoid duplication to the parent logger
