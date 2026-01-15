@@ -76,7 +76,7 @@ Found 1 candidate(s):
 ORIGINAL SIRET: 88794358600014
 Expected (MariaDB): name='FUNECAP - SCA', city='PARIS 15' (INSEE: 75115)
 ----------------------------------------
-Found 2 candidate(s):
+Found 1 candidate(s):
 
   1. SIRET: 88794368600014 [BEST MATCH]
      Company: FUNECAP - SCA
@@ -84,12 +84,6 @@ Found 2 candidate(s):
      Distance: 1 digit(s)
      Match: name=2, city=2
 
-  2. SIRET: 98794358600014
-     Company: SAMUEL LE GAREC
-     City:    LONGPONT-SUR-ORGE (INSEE: 91347)
-     Distance: 1 digit(s)
-
-  *** MANUAL REVIEW RECOMMENDED ***
 
 ======================================================================
 

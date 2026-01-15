@@ -531,6 +531,24 @@ def correct_invalid_siret(
         )
 
         best = valid_candidates[0]
+        best_score = best["name_match_score"] + best["city_match_score"]
+
+        # Filter out low-quality candidates when a good match exists
+        # Keep only candidates with score > 0 or within 1 point of best score
+        if best_score >= 3:
+            # Strong match: filter out candidates with no name/city match
+            filtered_candidates = [
+                c for c in valid_candidates
+                if (c["name_match_score"] + c["city_match_score"]) > 0
+            ]
+        else:
+            # Weak match: keep all for manual review
+            filtered_candidates = valid_candidates
+
+        # Use filtered list if it still has candidates
+        if filtered_candidates:
+            valid_candidates = filtered_candidates
+
         all_sirets = [c["corrected_siret"] for c in valid_candidates]
 
         logger.info(
@@ -539,9 +557,18 @@ def correct_invalid_siret(
             f"name='{best.get('company_name')}', city='{best.get('city')}')"
         )
 
+        # Determine if manual review is needed:
+        # - Not needed if best has high confidence (score >= 3) and is clearly better
+        # - Needed if multiple candidates with similar scores
+        needs_review = False
+        if len(valid_candidates) > 1:
+            second_score = valid_candidates[1]["name_match_score"] + valid_candidates[1]["city_match_score"]
+            # Review needed only if second candidate is competitive (within 1 point)
+            needs_review = (best_score < 3) or (second_score >= best_score - 1)
+
         # Return best candidate with all alternatives
         best["all_candidates"] = valid_candidates
-        best["needs_manual_review"] = len(valid_candidates) > 1
+        best["needs_manual_review"] = needs_review
 
         return best
 
