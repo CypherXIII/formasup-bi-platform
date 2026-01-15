@@ -97,13 +97,13 @@ formasup-bi-platform/
 │   ├── superset.service        # systemd service file
 │   └── README.md               # Deployment documentation
 │
-├── backup/                     # Automated backup service
+├── backup/                     # Automated backup service (code)
 │   ├── Dockerfile              # Backup container
 │   ├── backup.sh               # Backup script
 │   ├── entrypoint.sh           # Container entrypoint
 │   └── README.md               # Backup documentation
 │
-├── backups-files/              # Backup storage directory
+├── backups-files/              # Temporary backup staging (git-ignored, external transfer)
 │   └── .gitkeep                # Keep directory in git
 │
 ├── init/                       # PostgreSQL initialization scripts

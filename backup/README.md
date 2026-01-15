@@ -34,7 +34,7 @@ docker exec backup-fsa /usr/local/bin/backup.sh
 
 ## Backup Location
 
-Backups are stored in `./backups-files/` directory:
+Backups are temporarily stored in `./backups-files/` (git-ignored) before transfer to external storage:
 
 - `fsa_staging_YYYYMMDD_HHMMSS.dump` - FSA staging schema
 - `fsa_dwh_YYYYMMDD_HHMMSS.dump` - FSA data warehouse schema
