@@ -346,27 +346,6 @@ For invalid SIRETs (Luhn checksum errors), the tool uses Hamming distance to sug
 - **`siret_invalid.txt`**: SIRETs with Luhn errors (no valid correction found)
 - **`siret_errors_api.txt`**: SIRETs with API retrieval errors
 
-#### Example Output
-
-```
-ORIGINAL SIRET: 39539439700023
-Expected (MariaDB): name='R', city='ST ELOY LES MINES' (INSEE: 63338)
-----------------------------------------
-Found 2 candidate(s):
-
-  1. SIRET: 30539439700023 [BEST MATCH]
-     Company: ROCKWOOL FRANCE SAS
-     City:    SAINT-ELOY-LES-MINES (INSEE: 63338)
-     Distance: 1 digit(s)
-
-  2. SIRET: 39539430700023
-     Company: JEAN LE SAUX
-     City:    SAINT-HERBLAIN (INSEE: 56149)
-     Distance: 1 digit(s)
-
-  *** MANUAL REVIEW RECOMMENDED ***
-```
-
 #### Performance Improvements
 
 | Metric | Before | After | Improvement |
