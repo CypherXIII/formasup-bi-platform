@@ -69,7 +69,6 @@ migration/
 ├── api_enrichment.py    # API enrichment (companies + OPCO)
 ├── api_client.py        # Rate-limited API client
 ├── siret_correction.py  # SIRET validation and correction suggestions
-├── db_monitor.py        # Database monitoring utilities
 ├── Dockerfile           # Container definition
 ├── requirements.txt     # Python dependencies
 ├── README.md            # This documentation

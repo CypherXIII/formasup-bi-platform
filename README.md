@@ -121,7 +121,6 @@ formasup-bi-platform/
 │   ├── cleanup.py              # Data cleaning functions
 │   ├── sync.py                 # Table synchronization
 │   ├── temp_tables.py          # Temporary table management
-│   ├── db_monitor.py           # Database monitoring
 │   ├── logger.py               # Logging configuration
 │   ├── Dockerfile              # Migration container
 │   ├── requirements.txt        # Python dependencies
