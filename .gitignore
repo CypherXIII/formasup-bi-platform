@@ -89,3 +89,7 @@ backups-files/*.dump
 # Database dumps
 *.sql
 !init/*.sql
+# Migration output files
+siret_corrections.txt
+siret_invalid.txt
+siret_errors_api.txt
