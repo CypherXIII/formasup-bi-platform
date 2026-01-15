@@ -39,6 +39,7 @@ All AI interactions must respect the following constraints and security requirem
 - **DO NOT modify database schemas**
 - **DO NOT add new services without explicit request**
 - **DO NOT remove existing functionality**
+- **DO NOT modify** `docker-compose.yml` or `superset/config/superset_config.py` without explicit approval
 
 ### 4. Dependencies
 
@@ -51,6 +52,13 @@ All AI interactions must respect the following constraints and security requirem
 - **MUST run tests before suggesting changes**
 - **MUST maintain or improve test coverage**
 - **MUST NOT skip or disable tests**
+- Run test suite: `./run-tests.sh` (bash) or `./run-tests.ps1` (PowerShell)
+- Coverage minima: migration ≥ 80%, superset ≥ 85%
+
+### 6. Sensitive Outputs
+
+- Never commit migration reports: `siret_corrections.txt`, `siret_invalid.txt`, `siret_errors_api.txt`
+- Keep backups and dumps out of version control except explicitly whitelisted items
 
 ---
 
@@ -161,7 +169,7 @@ These rules are:
 
 ## Version
 
-- **Version**: 1.1.0
+- **Version**: 1.2.0
 - **Date**: January 2026
 - **Author**: Marie Challet
 - **Compliance**: ISO 27001:2022, RGPD

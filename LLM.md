@@ -128,6 +128,8 @@ def migrate_table(source: Connection, target: Connection, table: str) -> int:
 2. Verify all tests pass
 3. Check coverage meets minimums
 
+> On Windows, use `./run-tests.ps1`
+
 ### After Any Change
 
 1. Add tests for new functionality
@@ -139,6 +141,11 @@ def migrate_table(source: Connection, target: Connection, table: str) -> int:
 - Migration module: 80%
 - Superset module: 85%
 
+### Sensitive Outputs
+
+- Never commit migration reports: `siret_corrections.txt`, `siret_invalid.txt`, `siret_errors_api.txt`
+- Backups/dumps must stay out of git unless explicitly whitelisted
+
 ---
 
 ## File Organization
@@ -149,6 +156,7 @@ def migrate_table(source: Connection, target: Connection, table: str) -> int:
 - `superset/config/superset_config.py` (security settings)
 - `.env` files (user credentials)
 - `apache-superset-src/` (external source)
+- Migration output reports listed above
 
 ### Safe to Modify
 
@@ -212,7 +220,7 @@ If unclear about requirements:
 
 ## Version
 
-- **Document version**: 1.0.0
+- **Document version**: 1.1.0
 - **Last updated**: January 2026
 - **Author**: Marie Challet
 - **Organization**: FormaSup Auvergne
