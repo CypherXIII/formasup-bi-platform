@@ -39,14 +39,7 @@ A production-ready Business Intelligence platform based on Apache Superset 6.0.0
 - **100% French interface** with complete translation (fixing Superset bug #35569)
 - **Data migration tools** for transferring data from MariaDB to PostgreSQL
 - **Production-ready Docker deployment** with security best practices
-
-### Intended Users
-
-- Data analysts at FormaSup Auvergne
-- Academic partners requiring BI dashboards
-- IT administrators managing educational data infrastructure
-- DevOps engineers deploying Superset in production
-
+  
 ---
 
 ## Features
@@ -348,7 +341,7 @@ This project follows **secure-by-default** principles:
 
 ---
 
-## Backup and Recovery
+## Backup & Recovery
 
 ### Automated Backups
 

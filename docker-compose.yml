@@ -58,10 +58,11 @@ services:
     networks:
       - fsa-net
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} && psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 'SELECT 1'" ]
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 30s
 
   superset-db:
     image: postgres:15
@@ -78,10 +79,11 @@ services:
     networks:
       - fsa-net
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${SUPERSET_DB_USER} -d superset" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${SUPERSET_DB_USER} -d superset && psql -U ${SUPERSET_DB_USER} -d superset -c 'SELECT 1'" ]
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 30s
 
   migration:
     build:

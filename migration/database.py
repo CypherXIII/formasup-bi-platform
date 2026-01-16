@@ -25,7 +25,7 @@ from config import Config
 
 class MariaDBMetrics:
     """! @brief Collects client-side impact metrics for MariaDB (read-only).
-    
+
     Measures the number of queries, total duration, and logs slow queries.
     """
 
@@ -191,17 +191,51 @@ def mariadb_connection(cfg: Config) -> Iterator[pymysql.connections.Connection]:
 @contextmanager
 def postgres_connection(cfg: Config) -> Iterator[psycopg2.extensions.connection]:
     """! @brief Connects to PostgreSQL with context management and initial configuration.
+
+    Implements retry logic with exponential backoff to handle cases where
+    the database system is still starting up.
+
     @param cfg Configuration containing connection information.
     @yield Active PostgreSQL connection.
-    @raises Exception In case of connection or configuration error.
+    @raises Exception In case of connection or configuration error after all retries.
     """
-    conn = psycopg2.connect(
-        host=cfg.pg_host,
-        user=cfg.pg_user,
-        password=cfg.pg_password,
-        dbname=cfg.pg_db,
-        connect_timeout=10,
-    )
+    max_retries = 10
+    base_delay = 2  # seconds
+    max_delay = 60  # seconds
+    logger = logging.getLogger("migration")
+
+    conn = None
+    last_exception = None
+
+    for attempt in range(max_retries):
+        try:
+            conn = psycopg2.connect(
+                host=cfg.pg_host,
+                user=cfg.pg_user,
+                password=cfg.pg_password,
+                dbname=cfg.pg_db,
+                connect_timeout=10,
+            )
+            break
+        except psycopg2.OperationalError as e:
+            last_exception = e
+            error_msg = str(e).lower()
+            # Retry on startup or connection errors
+            if "starting up" in error_msg or "connection refused" in error_msg:
+                delay = min(base_delay * (2 ** attempt), max_delay)
+                logger.warning(
+                    "PostgreSQL not ready (attempt %d/%d): %s. Retrying in %ds...",
+                    attempt + 1, max_retries, e, delay
+                )
+                time.sleep(delay)
+            else:
+                # Non-retryable error
+                raise
+
+    if conn is None:
+        raise last_exception or psycopg2.OperationalError(
+            "Failed to connect to PostgreSQL after all retries"
+        )
     conn.set_session(autocommit=False)
     try:
         with conn.cursor() as cur:
