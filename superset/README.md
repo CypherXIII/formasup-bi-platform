@@ -272,7 +272,6 @@ pytest --cov=config --cov-report=html
     docker compose ps
     ```
 
-
 ## Services
 
 | Service       | Container     | Port  | Description                |
