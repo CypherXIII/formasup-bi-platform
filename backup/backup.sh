@@ -10,24 +10,37 @@ BACKUP_DIR="/backups"
 RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-7}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
+# System schemas to exclude when dumping per schema
+EXCLUDED_SCHEMAS="pg_catalog,information_schema,pg_toast"
+
 # Create backup directory if not exists
 mkdir -p "${BACKUP_DIR}"
 
 echo "[$(date)] Starting daily backup..."
 
-# Backup FSA database (staging schema)
-echo "[$(date)] Backing up FSA staging schema..."
+# Discover non-system schemas and dump each separately for granular restore
+echo "[$(date)] Discovering schemas in ${PG_DB}..."
+SCHEMA_LIST=$(psql -h "${PG_HOST}" -U "${PG_USER}" -d "${PG_DB}" -Atc \
+    "SELECT nspname FROM pg_namespace WHERE nspname NOT IN (${EXCLUDED_SCHEMAS}) AND nspname NOT LIKE 'pg_temp_%' AND nspname NOT LIKE 'pg_toast_temp_%'")
+
+if [ -z "${SCHEMA_LIST}" ]; then
+    echo "[$(date)] No schemas found to back up; aborting." >&2
+    exit 1
+fi
+
+for schema in ${SCHEMA_LIST}; do
+    echo "[$(date)] Backing up schema '${schema}'..."
+    pg_dump -h "${PG_HOST}" -U "${PG_USER}" -d "${PG_DB}" \
+            -n "${schema}" -F c -f "${BACKUP_DIR}/fsa_${schema}_${TIMESTAMP}.dump"
+    echo "[$(date)] Schema '${schema}' backup completed: fsa_${schema}_${TIMESTAMP}.dump"
+done
+
+# Full database backup for disaster recovery
+echo "[$(date)] Backing up full database ${PG_DB}..."
 pg_dump -h "${PG_HOST}" -U "${PG_USER}" -d "${PG_DB}" \
-    -n staging -F c -f "${BACKUP_DIR}/fsa_staging_${TIMESTAMP}.dump"
+        -F c -f "${BACKUP_DIR}/fsa_full_${TIMESTAMP}.dump"
 
-echo "[$(date)] FSA staging backup completed: fsa_staging_${TIMESTAMP}.dump"
-
-# Backup FSA database (dwh schema)
-echo "[$(date)] Backing up FSA dwh schema..."
-pg_dump -h "${PG_HOST}" -U "${PG_USER}" -d "${PG_DB}" \
-    -n dwh -F c -f "${BACKUP_DIR}/fsa_dwh_${TIMESTAMP}.dump"
-
-echo "[$(date)] FSA dwh backup completed: fsa_dwh_${TIMESTAMP}.dump"
+echo "[$(date)] Full database backup completed: fsa_full_${TIMESTAMP}.dump"
 
 # Backup Superset database
 echo "[$(date)] Backing up Superset database..."

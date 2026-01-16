@@ -345,11 +345,15 @@ This project follows **secure-by-default** principles:
 
 ### Automated Backups
 
-The backup service runs daily at 3 AM by default (configurable via `BACKUP_CRON_SCHEDULE`).
+The backup service runs daily at 3 AM by default (configurable via `BACKUP_CRON_SCHEDULE`). Each run produces:
+
+- `backups-files/fsa_<schema>_YYYYMMDD_HHMMSS.dump` for every non-system schema of the FSA database
+- `backups-files/fsa_full_YYYYMMDD_HHMMSS.dump` for a full FSA database snapshot
+- `backups-files/superset_YYYYMMDD_HHMMSS.dump` for Superset metadata
 
 ```bash
 # Manual backup
-docker exec backup-fsa /backup.sh
+docker exec backup-fsa /usr/local/bin/backup.sh
 
 # List available backups
 ls -la backups-files/
@@ -358,11 +362,17 @@ ls -la backups-files/
 ### Restore from Backup
 
 ```bash
-# Restore business database
-docker exec -i postgres-fsa pg_restore -U postgres -d FSA < backups-files/staging_backup_YYYYMMDD_HHMMSS.dump
+# Restore one FSA schema (replace <schema>)
+docker exec -i postgres-fsa pg_restore -U postgres -d FSA -c backups-files/fsa_<schema>_YYYYMMDD_HHMMSS.dump
 
-# Or use the restore script
-./init/restore_backup.sh backups-files/staging_backup_YYYYMMDD_HHMMSS.dump
+# Restore full FSA database
+docker exec -i postgres-fsa pg_restore -U postgres -d FSA -c backups-files/fsa_full_YYYYMMDD_HHMMSS.dump
+
+# Restore Superset metadata
+docker exec -i superset-db pg_restore -U superset -d superset -c backups-files/superset_YYYYMMDD_HHMMSS.dump
+
+# Or use the helper script (targets FSA)
+./init/restore_backup.sh backups-files/fsa_full_YYYYMMDD_HHMMSS.dump
 ```
 
 ### Backup Configuration

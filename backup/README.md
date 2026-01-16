@@ -36,8 +36,8 @@ docker exec backup-fsa /usr/local/bin/backup.sh
 
 Backups are temporarily stored in `./backups-files/` (git-ignored) before transfer to external storage:
 
-- `fsa_staging_YYYYMMDD_HHMMSS.dump` - FSA staging schema
-- `fsa_dwh_YYYYMMDD_HHMMSS.dump` - FSA data warehouse schema
+- `fsa_<schema>_YYYYMMDD_HHMMSS.dump` - Each non-system schema of the FSA database
+- `fsa_full_YYYYMMDD_HHMMSS.dump` - Full FSA database (all schemas)
 - `superset_YYYYMMDD_HHMMSS.dump` - Superset database
 
 ## Restore
@@ -45,11 +45,11 @@ Backups are temporarily stored in `./backups-files/` (git-ignored) before transf
 To restore a backup:
 
 ```bash
-# Restore FSA staging schema
-docker exec -i postgres-fsa pg_restore -U postgres -d FSA -c ./backups-files/fsa_staging_XXXXXXXX_XXXXXX.dump
+# Restore one FSA schema
+docker exec -i postgres-fsa pg_restore -U postgres -d FSA -c ./backups-files/fsa_<schema>_XXXXXXXX_XXXXXX.dump
 
-# Restore FSA dwh schema
-docker exec -i postgres-fsa pg_restore -U postgres -d FSA -c ./backups-files/fsa_dwh_XXXXXXXX_XXXXXX.dump
+# Restore full FSA database
+docker exec -i postgres-fsa pg_restore -U postgres -d FSA -c ./backups-files/fsa_full_XXXXXXXX_XXXXXX.dump
 
 # Restore Superset database
 docker exec -i superset-db pg_restore -U superset -d superset -c ./backups-files/superset_XXXXXXXX_XXXXXX.dump
