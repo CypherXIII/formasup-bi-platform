@@ -2,8 +2,6 @@
 
 > Technical documentation for resolving the French translation issue in Apache Superset 6.0.0 (Bug #35569).
 
----
-
 ## Problem Context
 
 Superset 6.0.0 has a known bug (#35569) introduced by PR #34119 that causes a race condition in translation loading. This bug prevents French translations from displaying in the user interface, even when translation files are present.
@@ -14,8 +12,6 @@ Superset 6.0.0 has a known bug (#35569) introduced by PR #34119 that causes a ra
 - Frontend translations (.json files) fail to load
 - Endpoint `/superset/language_pack/fr/` returns error "Language pack doesn't exist on the server"
 - Interface remains in English despite French configuration
-
----
 
 ## Root Cause Analysis
 
@@ -31,8 +27,6 @@ The problem stems from a **race condition** between:
 | `superset/views/base.py`                | 406  | Hardcoded `"en"` fallback                |
 | `superset-frontend/src/preamble.ts`     | -    | Async IIFE not awaited                   |
 | `superset-frontend/src/views/index.tsx` | -    | React renders before translations load   |
-
----
 
 ## Applied Solutions
 
@@ -124,8 +118,6 @@ FLASK_APP_MUTATOR = lambda app: app.appbuilder.sm.add_permission_to_role(
 )
 ```
 
----
-
 ## Superset Translation Architecture
 
 Superset uses two translation systems:
@@ -141,8 +133,6 @@ Superset uses two translation systems:
 - **Files**: `.po` → `.json` (jed1.x format)
 - **Location**: `superset/translations/fr/LC_MESSAGES/messages.json`
 - **Usage**: Client-side translations, React components
-
----
 
 ## Build and Deployment
 
@@ -184,8 +174,6 @@ docker exec superset-fsa ls -la /app/superset/translations/fr/LC_MESSAGES/
 curl http://localhost:8088/superset/language_pack/fr/
 ```
 
----
-
 ## Verification Checklist
 
 After deployment, verify:
@@ -196,8 +184,6 @@ After deployment, verify:
 - [ ] Dashboard labels are in French
 - [ ] SQL Lab interface is French
 - [ ] Error messages appear in French
-
----
 
 ## Troubleshooting
 
@@ -225,16 +211,12 @@ Some strings may remain in English if:
 - They were added after translation file creation
 - They are third-party library strings
 
----
-
 ## References
 
 - **Superset Issue #35569**: [GitHub Link](https://github.com/apache/superset/issues/35569)
 - **Superset PR #34119**: Original PR introducing the bug
 - **Flask-Babel Documentation**: [Flask-Babel](https://flask-babel.tkte.ch/)
 - **Superset Translation Guide**: [Superset Translation Guide](https://superset.apache.org/docs/contributing/translating)
-
----
 
 ## Credits
 

@@ -7,8 +7,6 @@
 [![Tests](https://img.shields.io/badge/Tests-54%20Passed-brightgreen)](#testing)
 [![Coverage](https://img.shields.io/badge/Coverage-80%25+-yellowgreen)](#testing)
 
----
-
 ## Table of Contents
 
 - [Overview](#overview)
@@ -22,8 +20,6 @@
 - [Testing](#testing)
 - [Security](#security)
 - [Troubleshooting](#troubleshooting)
-
----
 
 ## Overview
 
@@ -49,8 +45,6 @@ This migration tool provides a sophisticated solution for transferring data betw
 | Temporary Tables         | Safe migration with rollback capability          |
 | Query Metrics            | Track database impact and slow queries           |
 | Error Recovery           | Resume from failures with state preservation     |
-
----
 
 ## Architecture
 
@@ -97,8 +91,6 @@ migration/
 | `api_client.py`     | HTTP client with retry and rate limiting         |
 | `siret_correction.py` | SIRET validation, Hamming distance correction suggestions |
 
----
-
 ## Prerequisites
 
 ### System Requirements
@@ -114,8 +106,6 @@ migration/
 - `psycopg2-binary` - PostgreSQL connector
 - `python-dotenv` - Environment file support
 - `requests` - HTTP client for API enrichment
-
----
 
 ## Installation
 
@@ -135,8 +125,6 @@ docker build -t migration-app .
 # Run migration
 docker run --env-file .env migration-app
 ```
-
----
 
 ## Configuration
 
@@ -201,8 +189,6 @@ Logs include the process id and logger name for correlation; set `MIGRATION_LOG_
 | `DB_METRICS_SLOW_MS`      | Slow query threshold (ms)    | 200     |
 | `MIGRATION_LOG_LEVEL`     | Log level (DEBUG/INFO/WARN)  | INFO    |
 
----
-
 ## Usage
 
 ### Full Migration (Recommended)
@@ -261,8 +247,6 @@ docker run -e MARIA_HOST=host.docker.internal \
            --env-file .env migration-app
 ```
 
----
-
 ## Migration Process
 
 ### Phase 1: Migrate (`--step migrate`)
@@ -297,8 +281,6 @@ docker run -e MARIA_HOST=host.docker.internal \
 - Apply changes with conflict resolution
 - Re-enable triggers
 - Drop temporary schema (unless `--keep-temp`)
-
----
 
 ## API Enrichment
 
@@ -384,8 +366,6 @@ After migration with API enrichment enabled, the following files are created:
 | `siret_invalid.txt` | List of invalid SIRETs (Luhn errors, no correction) | Text list |
 | `siret_errors_api.txt` | SIRETs with API retrieval errors | Text list |
 
----
-
 ## Testing
 
 ### Test Structure
@@ -424,8 +404,6 @@ pytest tests/test_database.py -v
 | Utilities    | 14    | Logger, API client tests       |
 | **Total**    | 54    | All passing                    |
 
----
-
 ## Security
 
 ### Security Principles
@@ -453,8 +431,6 @@ Files that should NEVER be committed:
 - `*.log` - Log files
 - `siret_invalid.txt` - Error reports
 - `siret_errors_api.txt` - API error reports
-
----
 
 ## Troubleshooting
 
@@ -486,8 +462,6 @@ If you see "Query limit approaching" warnings:
 - Check rate limiting settings
 - Verify network connectivity to APIs
 - Review `siret_errors_api.txt` for details
-
----
 
 ## Credits
 

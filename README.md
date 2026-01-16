@@ -8,8 +8,6 @@
 [![Superset](https://img.shields.io/badge/Superset-6.0.0-orange)](https://superset.apache.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
 
----
-
 ## Table of Contents
 
 - [Overview](#overview)
@@ -27,8 +25,6 @@
 - [Contributing](#contributing)
 - [License](#license)
 
----
-
 ## Overview
 
 A production-ready Business Intelligence platform based on Apache Superset 6.0.0, with complete French translation and MariaDB to PostgreSQL migration tools. Designed for educational data analysis at FormaSup Auvergne.
@@ -40,8 +36,6 @@ A production-ready Business Intelligence platform based on Apache Superset 6.0.0
 - **Data migration tools** for transferring data from MariaDB to PostgreSQL
 - **Production-ready Docker deployment** with security best practices
   
----
-
 ## Features
 
 ### Core Features
@@ -73,8 +67,6 @@ A production-ready Business Intelligence platform based on Apache Superset 6.0.0
 - CSRF protection enabled by default
 - Network isolation via Docker networks
 - Health checks and automatic restarts
-
----
 
 ## Architecture
 
@@ -160,8 +152,6 @@ formasup-bi-platform/
 | Migration     | migration-fsa   | -     | Data migration service (scheduled)   |
 | Backup        | backup-fsa      | -     | Daily automated backups              |
 
----
-
 ## Prerequisites
 
 ### System Requirements
@@ -182,8 +172,6 @@ formasup-bi-platform/
 - Python 3.10+
 - pytest 7.0+
 - Node.js 18+ (for building Superset French translations)
-
----
 
 ## Quick Start
 
@@ -224,8 +212,6 @@ docker compose logs -f superset
 - **Password**: admin
 
 > **WARNING**: Change default credentials immediately in production!
-
----
 
 ## Configuration
 
@@ -307,8 +293,6 @@ RUN_BACKUP_ON_START=false
 | `superset/config/superset_config.py` | Superset configuration        |
 | `migration/config.py`                | Migration settings            |
 
----
-
 ## Security
 
 ### Security Principles
@@ -338,8 +322,6 @@ This project follows **secure-by-default** principles:
 - Database ports are exposed by default (for development)
 - No built-in rate limiting (use reverse proxy)
 - No built-in authentication integration (LDAP/OAuth configurable)
-
----
 
 ## Backup & Recovery
 
@@ -382,8 +364,6 @@ docker exec -i superset-db pg_restore -U superset -d superset -c backups-files/s
 | `BACKUP_CRON_SCHEDULE`  | `0 3 * * *`   | Cron expression for backup time|
 | `BACKUP_RETENTION_DAYS` | `7`           | Days to keep backup files      |
 | `RUN_BACKUP_ON_START`   | `false`       | Run backup on container start  |
-
----
 
 ## VPS Deployment
 
@@ -487,8 +467,6 @@ sudo systemctl start superset
 - [ ] Configure backup strategy
 - [ ] Review security settings in `superset_config.py`
 
----
-
 ## Testing
 
 ### Test Suites
@@ -522,8 +500,6 @@ pytest --cov=migration --cov-report=html
 ```bash
 pip install pytest pytest-cov pytest-mock
 ```
-
----
 
 ## Development
 
@@ -573,8 +549,6 @@ docker exec migration-fsa python migrate.py --step sync
 - **Python**: PEP 8, type hints required, docstrings required
 - **PowerShell**: Microsoft conventions
 - **Markdown**: ATX headings, English only, no emojis
-
----
 
 ## Troubleshooting
 
@@ -630,8 +604,6 @@ docker exec migration-fsa python -c "from database import get_pg_connection; pri
 3. Check [AI_GUIDE.md](AI_GUIDE.md) for development guidelines
 4. Open an issue on GitHub with logs and configuration
 
----
-
 ## Contributing
 
 ### Guidelines
@@ -651,14 +623,10 @@ docker exec migration-fsa python -c "from database import get_pg_connection; pri
 Types: Add, Fix, Update, Refactor, Test, Docs, Chore
 ```
 
----
-
 ## License
 
 - **Apache Superset**: Apache License 2.0
 - **This project**: Apache License 2.0
-
----
 
 ## Credits
 

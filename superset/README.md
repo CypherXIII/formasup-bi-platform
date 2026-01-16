@@ -7,8 +7,6 @@
 [![Tests](https://img.shields.io/badge/Tests-25%20Passed-brightgreen)](#testing)
 [![Coverage](https://img.shields.io/badge/Coverage-85%25+-yellowgreen)](#testing)
 
----
-
 ## Table of Contents
 
 - [Overview](#overview)
@@ -19,8 +17,6 @@
 - [Building](#building)
 - [Testing](#testing)
 - [Troubleshooting](#troubleshooting)
-
----
 
 ## Overview
 
@@ -33,8 +29,6 @@ This directory contains the **Superset-specific configuration** for FormaSup BI,
 - Custom branding and logos
 - Production-ready Docker configuration
 - Comprehensive test suite
-
----
 
 ## Architecture
 
@@ -72,8 +66,6 @@ superset/
 | `scripts/`             | Build automation scripts                             |
 | `tests/`               | Test suite (25 tests)                                |
 
----
-
 ## Quick Start
 
 ### Prerequisites
@@ -86,40 +78,38 @@ superset/
 
 1. **Clone Superset source** (included in repository):
 
-The `apache-superset-src/` directory contains Superset 6.0.0 source code.
-If missing, clone it manually:
+    The `apache-superset-src/` directory contains Superset 6.0.0 source code.
+    If missing, clone it manually:
 
-```bash
-git clone https://github.com/apache/superset.git apache-superset-src
-cd apache-superset-src
-git checkout 6.0.0
-cd ..
-```
+    ```bash
+    git clone https://github.com/apache/superset.git apache-superset-src
+    cd apache-superset-src
+    git checkout 6.0.0
+    cd ..
+    ```
 
-1. **Build the French image**:
+2. **Build the French image**:
 
-```powershell
-# Windows
-.\scripts\build-superset-fr.ps1
+    ```powershell
+    # Windows
+    .\scripts\build-superset-fr.ps1
 
-# Linux/macOS
-./scripts/build-superset-fr.ps1
-```
+    # Linux/macOS
+    ./scripts/build-superset-fr.ps1
+    ```
 
-1. **Start services** (from parent directory):
+3. **Start services** (from parent directory):
 
-```bash
-cd ..
-docker compose up -d
-```
+    ```bash
+    cd ..
+    docker compose up -d
+    ```
 
-1. **Access the application**:
+4. **Access the application**:
 
-- **URL**: <http://localhost:8088>
-- **Username**: admin
-- **Password**: admin
-
----
+   - **URL**: <http://localhost:8088>
+   - **Username**: admin
+   - **Password**: admin
 
 ## French translation
 
@@ -140,8 +130,6 @@ The build script applies targeted fixes:
 ### Technical Details
 
 The build script in `scripts/build-superset-fr.ps1` applies the necessary patches to fix bug #35569 during the Docker image build process.
-
----
 
 ## Configuration
 
@@ -176,8 +164,6 @@ LANGUAGES = {
 | `DATABASE_URL`        | Superset metadata database URI | Yes      |
 | `LANG`                | System locale                  | No       |
 
----
-
 ## Building
 
 ### Automated Build Script
@@ -209,8 +195,6 @@ The build script handles all required steps:
 | `-ImageName`       | `superset-fr-formasup` | Docker image name      |
 | `-NoBuildCache`    | `$false`               | Disable Docker cache   |
 
----
-
 ## Testing
 
 ### Test Structure
@@ -240,8 +224,6 @@ pytest --cov=config --cov-report=html
 - **Configuration tests**: SECRET_KEY, locales, branding
 - **Build tests**: Script existence, parameters, artifacts
 
----
-
 ## Troubleshooting
 
 ### Interface Shows English
@@ -249,48 +231,47 @@ pytest --cov=config --cov-report=html
 1. Clear browser cache completely
 2. Rebuild with translations:
 
-```bash
-.\scripts\build-superset-fr.ps1 -NoBuildCache
-docker compose up -d --build
-```
+    ```bash
+    .\scripts\build-superset-fr.ps1 -NoBuildCache
+    docker compose up -d --build
+    ```
 
-1. Verify configuration:
+3. Verify configuration:
 
-```bash
-docker exec superset-fsa cat /app/pythonpath/superset_config.py | grep BABEL
-```
+    ```bash
+    docker exec superset-fsa cat /app/pythonpath/superset_config.py | grep BABEL
+    ```
 
 ### Build Fails
 
 1. Verify source code exists:
 
-```bash
-ls apache-superset-src
-```
+    ```bash
+    ls apache-superset-src
+    ```
 
-1. Check Docker is running:
+2. Check Docker is running:
 
-```bash
-docker version
-```
+    ```bash
+    docker version
+    ```
 
-1. Review build logs for errors
+3. Review build logs for errors
 
 ### Container Won't Start
 
 1. Check logs:
 
-```bash
-docker compose logs superset
-```
+    ```bash
+    docker compose logs superset
+    ```
 
-1. Verify database connectivity:
+2. Verify database connectivity:
 
-```bash
-docker compose ps
-```
+    ```bash
+    docker compose ps
+    ```
 
----
 
 ## Services
 
@@ -300,13 +281,9 @@ docker compose ps
 | PostgreSQL    | postgres-fsa  | 5432  | Business data database     |
 | Superset DB   | superset-db   | 5442  | Superset metadata database |
 
----
-
 ## License
 
 Apache Superset: Apache License 2.0
-
----
 
 ## Credits
 
