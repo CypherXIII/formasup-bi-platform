@@ -155,8 +155,8 @@ formasup-bi-platform/
 | Service       | Container       | Port  | Description                          |
 |---------------|-----------------|-------|--------------------------------------|
 | Superset      | superset-fsa    | 8088  | BI dashboards and SQL Lab            |
-| PostgreSQL    | postgres-fsa    | 5432  | Business data database (PostgreSQL 17)|
-| Superset DB   | superset-db     | 5442  | Superset metadata database (PostgreSQL 15)|
+| PostgreSQL    | postgres-fsa    | 5432  | Business data database (PostgreSQL 17) |
+| Superset DB   | superset-db     | 5442  | Superset metadata database (PostgreSQL 15) |
 | Migration     | migration-fsa   | -     | Data migration service (scheduled)   |
 | Backup        | backup-fsa      | -     | Daily automated backups              |
 
