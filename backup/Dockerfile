@@ -7,11 +7,8 @@ RUN apk add --no-cache bash dcron
 COPY backup.sh /usr/local/bin/backup.sh
 RUN chmod +x /usr/local/bin/backup.sh
 
-# Create backup directory
-RUN mkdir -p /backups
-
-# Setup cron job (default: 3 AM daily)
-RUN echo "${BACKUP_CRON_SCHEDULE:-0 3 * * *} /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
+# Create backup directory and pgpass file directory
+RUN mkdir -p /backups /root
 
 # Entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

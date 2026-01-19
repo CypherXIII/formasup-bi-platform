@@ -57,8 +57,12 @@ A production-ready Business Intelligence platform based on Apache Superset 6.0.0
 ### Backup and Recovery
 
 - **Automated daily backups** at 3 AM (configurable via cron expression)
+- **Smart scheduling**: runs missed backups on next startup
+- **Compressed tar.gz archives** for efficient storage (50%+ space savings)
+- **Per-schema backups** for granular restore options
 - **Multi-database support** (business data + Superset metadata)
 - **Configurable retention** (default: 7 days)
+- **Duplicate prevention**: one backup per day maximum
 - **One-command restore** from backup files
 
 ### Security Features
@@ -92,7 +96,7 @@ formasup-bi-platform/
 │   └── README.md               # Backup documentation
 │
 ├── backups-files/              # Backup storage directory (git-ignored)
-│   └── *.dump                  # PostgreSQL backup files
+│   └── backup_*.tar.gz         # Compressed PostgreSQL backup archives
 │
 ├── init/                       # PostgreSQL initialization scripts
 │   └── restore_backup.sh       # Database restore script
