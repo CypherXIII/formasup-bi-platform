@@ -84,6 +84,7 @@ superset_home/
 *.bak
 *.backup
 backups-files/*.dump
+backups-files/*.tar.gz
 !backups-files/.gitkeep
 
 # Database dumps
