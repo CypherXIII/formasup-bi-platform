@@ -41,8 +41,8 @@ This is a production business intelligence platform for FormaSup Auvergne. The p
 2. **Add tests** for any new functionality
 3. **Maintain minimum coverage**: 80% for migration, 85% for superset
 4. **Test commands**:
-   - PowerShell: `.\run-tests.ps1`
-   - Bash: `./run-tests.sh`
+    - PowerShell: `.\scripts\run-tests.ps1`
+    - Bash: `./scripts/run-tests.sh`
 
 ## Coding Standards
 
@@ -138,7 +138,7 @@ Before submitting code:
 
 - [ ] All code and comments are in English
 - [ ] No hardcoded secrets or credentials
-- [ ] Tests pass: `.\run-tests.ps1`
+- [ ] Tests pass: `.\scripts\run-tests.ps1`
 - [ ] No new dependencies added
 - [ ] No emojis in code or documentation
 - [ ] Docstrings for all public functions

@@ -1,6 +1,6 @@
-# AI Guide - FormaSup BI Platform
+# DEV Rules - FormaSup BI Platform
 
-> Single source of truth for AI assistants (Copilot, ChatGPT, Claude, etc.). Production system: prioritize safety, security, and clarity.
+> Single source of truth for development rules and AI assistant guidance. Production system: prioritize safety, security, and clarity.
 
 ---
 
@@ -10,7 +10,7 @@
 2. **No secrets** in code or logs; always use environment variables.
 3. **Do not change architecture**: no edits to `docker-compose.yml`, no DB schema changes, no new services/dependencies without explicit approval.
 4. **Protected files**: `superset/config/superset_config.py`, `.env`, `apache-superset-src/`, migration outputs (`siret_corrections.txt`, `siret_invalid.txt`, `siret_errors_api.txt`), backups/dumps.
-5. **Testing**: run `./run-tests.sh` (bash) or `./run-tests.ps1` (Windows) before proposing changes; keep coverage ≥80% (migration) and ≥85% (superset).
+5. **Testing**: run `./scripts/run-tests.sh` (bash) or `./scripts/run-tests.ps1` (Windows) before proposing changes; keep coverage ≥80% (migration) and ≥85% (superset).
 6. **Security**: keep CSRF enabled, validate inputs, use parameterized queries, avoid logging sensitive data.
 
 ---
@@ -52,7 +52,7 @@
 
 ## Testing Requirements
 
-- Run tests: `./run-tests.sh` (bash) or `./run-tests.ps1` (Windows).
+- Run tests: `./scripts/run-tests.sh` (bash) or `./scripts/run-tests.ps1` (Windows).
 - Coverage minima: migration ≥80%, superset ≥85%.
 - Add tests for new behavior; update tests if behavior changes; do not reduce coverage.
 

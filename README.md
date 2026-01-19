@@ -80,9 +80,13 @@ formasup-bi-platform/
 ├── docker-compose.prod.yml     # Production configuration
 ├── .env.example                # Environment template
 ├── README.md                   # This documentation
-├── DEV_RULES.md                # Development guidelines and rules
-├── run-tests.ps1               # PowerShell test runner
-├── run-tests.sh                # Bash test runner
+├── docs/
+│   └── DEV_RULES.md            # Development guidelines and rules
+├── scripts/
+│   ├── run-tests.ps1           # PowerShell test runner
+│   └── run-tests.sh            # Bash test runner
+├── config/
+│   └── .markdownlint.json      # Markdown lint configuration
 │
 ├── deploy/                     # VPS deployment resources
 │   ├── nginx.conf              # Reverse proxy configuration
@@ -484,8 +488,8 @@ sudo systemctl start superset
 
 ```bash
 # All tests (recommended)
-./run-tests.sh          # Linux/macOS
-.\run-tests.ps1         # Windows PowerShell
+./scripts/run-tests.sh          # Linux/macOS
+.\scripts\run-tests.ps1         # Windows PowerShell
 
 # Migration tests only
 cd migration
