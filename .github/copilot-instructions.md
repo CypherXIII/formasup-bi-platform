@@ -5,7 +5,7 @@
 This is a production business intelligence platform for FormaSup Auvergne. The project integrates:
 
 - **Apache Superset 6.0.0** with French translation fix
-- **PostgreSQL 15** for data storage
+- **PostgreSQL 17** for primary data storage (PostgreSQL 15 for Superset metadata)
 - **Docker Compose** for orchestration
 - **Python migration tools** for MariaDB to PostgreSQL migration
 
@@ -90,15 +90,13 @@ def process_data(input_data: dict) -> Optional[str]:
 ## File Structure Guidelines
 
 ```
-postgres_docker/
-├── migration/          # Migration tools (Python)
-│   ├── tests/         # Migration tests
-│   └── logs/          # Migration logs (gitignored)
-├── superset/           # Superset configuration
-│   ├── config/        # Superset Python config
-│   ├── assets/        # Custom assets
-│   └── tests/         # Superset tests
-├── init/               # Database initialization
+formasup-bi-platform/
+├── DEV_RULES.md         # Development guidelines and rules
+├── backup/              # Backup service (cron, pg_dump, compression)
+├── backups-files/       # Backup outputs (ignored)
+├── migration/           # Migration tools (Python)
+├── superset/            # Superset configuration
+├── init/                # Database initialization
 └── apache-superset-src/ # DO NOT MODIFY (source code)
 ```
 
