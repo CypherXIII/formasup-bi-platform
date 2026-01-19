@@ -718,4 +718,6 @@ def write_correction_report(
                 f.write(f"  {siret}\n")
 
         f.write("\n" + "=" * 70 + "\n")
-        f.write(f"SUMMARY: {len(corrections)} with suggestions, {len(uncorrected)} without\n")
+        f.write(
+            f"SUMMARY: {len(corrections)} corrected, {len(uncorrected)} uncorrected\n"
+        )
