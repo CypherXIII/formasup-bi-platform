@@ -57,7 +57,7 @@ class Config:
     enrichment_siret_limit: int = int(os.getenv("ENRICHMENT_SIRET_LIMIT", "-1"))
 
     # Migration scheduling
-    migration_run_hour: int = int(os.getenv("MIGRATION_RUN_HOUR", "2"))
+    migration_run_hour: int = int(os.getenv("MIGRATION_RUN_HOUR", "1"))
 
     def validate(self) -> None:
         """! @brief Validates that all required environment variables are set.

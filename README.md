@@ -280,7 +280,7 @@ ENABLE_OPCO_ENRICHMENT=false
 OPCO_RESOURCE_ID=59533036-3c0b-45e6-972c-e967c0a1be17
 
 # Scheduler (hour 0-23 when migration runs daily)
-MIGRATION_RUN_HOUR=2
+MIGRATION_RUN_HOUR=1
 
 # =============================================================================
 # BACKUP CONFIGURATION (optional)

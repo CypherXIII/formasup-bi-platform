@@ -113,7 +113,7 @@ services:
       API_REQUESTS_PER_SECOND: ${API_REQUESTS_PER_SECOND}
       ENABLE_OPCO_ENRICHMENT: ${ENABLE_OPCO_ENRICHMENT:-false}
       OPCO_RESOURCE_ID: ${OPCO_RESOURCE_ID:-59533036-3c0b-45e6-972c-e967c0a1be17}
-      MIGRATION_RUN_HOUR: ${MIGRATION_RUN_HOUR:-2}
+      MIGRATION_RUN_HOUR: ${MIGRATION_RUN_HOUR:-1}
     healthcheck:
       test: ["CMD", "python", "migrate.py", "--step", "migrate", "--dry-run"]
       interval: 1m
