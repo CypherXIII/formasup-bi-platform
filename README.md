@@ -80,7 +80,7 @@ formasup-bi-platform/
 ├── docker-compose.prod.yml     # Production configuration
 ├── .env.example                # Environment template
 ├── README.md                   # This documentation
-├── AI_GUIDE.md                 # AI assistants guidelines
+├── DEV_RULES.md                # Development guidelines and rules
 ├── run-tests.ps1               # PowerShell test runner
 ├── run-tests.sh                # Bash test runner
 │
@@ -605,7 +605,7 @@ docker exec migration-fsa python -c "from database import get_pg_connection; pri
 
 1. Check the [Troubleshooting](#troubleshooting) section
 2. Review container logs: `docker compose logs <service>`
-3. Check [AI_GUIDE.md](AI_GUIDE.md) for development guidelines
+3. Check [DEV_RULES.md](DEV_RULES.md) for development guidelines
 4. Open an issue on GitHub with logs and configuration
 
 ## Contributing
