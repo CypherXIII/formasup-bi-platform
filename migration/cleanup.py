@@ -16,6 +16,32 @@ import psycopg2 # type: ignore
 from config import Config
 
 
+def _delete_in_batches(
+    conn_pg: psycopg2.extensions.connection,
+    logger: logging.Logger,
+    delete_sql_template: str,
+    batch_size: int,
+) -> int:
+    """Deletes rows in batches using the provided DELETE ... LIMIT query.
+
+    The delete_sql_template must contain {batch_size} placeholder for the limit.
+    Using format string instead of parameter binding because psycopg2 has issues
+    with %s inside ctid subqueries. batch_size is always a trusted integer from config.
+    """
+    total_deleted = 0
+    delete_sql = delete_sql_template.format(batch_size=int(batch_size))
+    while True:
+        with conn_pg.cursor() as cur:
+            cur.execute(delete_sql)
+            deleted = cur.rowcount
+        conn_pg.commit()
+        total_deleted += deleted
+        if deleted < batch_size:
+            break
+        logger.debug("Deleted %d rows, continuing next batch", deleted)
+    return total_deleted
+
+
 def cleanup_temp_apprentice_company(
     conn_pg: psycopg2.extensions.connection, cfg: Config
 ) -> None:
@@ -37,6 +63,183 @@ def cleanup_temp_apprentice_company(
         logger.exception("Error during temporary table cleanup: %s", e)
 
         logger.info("Temporary row cleanup finished.")
+
+
+def sync_corrected_sirets(
+    conn_pg: psycopg2.extensions.connection, cfg: Config
+) -> None:
+    """! @brief Syncs corrected SIRETs: marks staging companies as 'temp' if MariaDB has them as 'temp'.
+
+    When a SIRET is corrected in MariaDB, the old record gets discr='temp'.
+    This function propagates that change to PostgreSQL staging:
+    1. Finds SIRETs that are 'temp' in temp schema but 'official' in staging
+    2. Updates references (registration, billing) to point to the correct company
+    3. Marks the old staging company as 'temp' for later deletion
+
+    @param conn_pg Active PostgreSQL connection.
+    @param cfg Configuration containing schema names.
+    """
+    logger = logging.getLogger("migration")
+    logger.info("=== Syncing corrected SIRETs from MariaDB ===")
+
+    try:
+        with conn_pg.cursor() as cur:
+            # Find SIRETs that are marked as 'temp' in temp schema (from MariaDB)
+            # but still exist as 'official' in staging
+            cur.execute(f"""
+                SELECT tc.siret, sc.id AS staging_id
+                FROM {cfg.temp_schema}.company tc
+                JOIN {cfg.pg_schema}.company sc ON tc.siret = sc.siret
+                WHERE tc.discr LIKE '%temp%'
+                  AND sc.discr LIKE '%official%'
+                  AND tc.siret IS NOT NULL
+                  AND tc.siret != '';
+            """)
+            corrected_sirets = cur.fetchall()
+
+            if not corrected_sirets:
+                logger.info("No corrected SIRETs to sync.")
+                return
+
+            logger.info(f"Found {len(corrected_sirets)} SIRETs corrected in MariaDB.")
+
+            for siret, staging_id in corrected_sirets:
+                logger.info(f"Processing corrected SIRET {siret} (staging id={staging_id})")
+
+                # Check if there's a replacement company with the same SIREN (first 9 digits)
+                siren = siret[:9] if siret and len(siret) >= 9 else None
+
+                if siren:
+                    # Look for a valid replacement company with the same SIREN
+                    cur.execute(f"""
+                        SELECT sc.id
+                        FROM {cfg.pg_schema}.company sc
+                        WHERE sc.siret LIKE %s
+                          AND sc.discr LIKE '%official%'
+                          AND sc.id != %s
+                        ORDER BY sc.updated_at DESC NULLS LAST
+                        LIMIT 1;
+                    """, (siren + '%', staging_id))
+                    replacement = cur.fetchone()
+
+                    if replacement:
+                        replacement_id = replacement[0]
+                        logger.info(f"Found replacement company id={replacement_id} for SIRET {siret}")
+
+                        # Update registration references
+                        cur.execute(f"""
+                            UPDATE {cfg.pg_schema}.registration
+                            SET host_company_id = %s
+                            WHERE host_company_id = %s;
+                        """, (replacement_id, staging_id))
+                        reg_updated = cur.rowcount
+
+                        # Update billing references
+                        cur.execute(f"""
+                            UPDATE {cfg.pg_schema}.billing
+                            SET company_id = %s
+                            WHERE company_id = %s;
+                        """, (replacement_id, staging_id))
+                        bill_updated = cur.rowcount
+
+                        logger.info(f"Updated {reg_updated} registrations, {bill_updated} billings")
+
+                # Mark the old company as 'temp' so it gets deleted by cleanup
+                cur.execute(f"""
+                    UPDATE {cfg.pg_schema}.company
+                    SET discr = 'company_temp'
+                    WHERE id = %s;
+                """, (staging_id,))
+                logger.info(f"Marked staging company id={staging_id} as 'temp'")
+
+        conn_pg.commit()
+        logger.info("Corrected SIRETs sync complete.")
+
+    except Exception as e:
+        conn_pg.rollback()
+        logger.exception("Error syncing corrected SIRETs: %s", e)
+
+
+def cleanup_staging_temp_companies(
+    conn_pg: psycopg2.extensions.connection, cfg: Config
+) -> None:
+    """! @brief Removes companies marked as 'temp' from the staging schema.
+
+    This cleanup runs on the staging schema (not temp schema) to remove
+    companies that were marked as obsolete/corrected.
+
+    @param conn_pg Active PostgreSQL connection.
+    @param cfg Configuration containing schema names.
+    """
+    logger = logging.getLogger("migration")
+    logger.info("=== Cleaning obsolete companies from staging ===")
+    schema = cfg.pg_schema
+
+    try:
+        batch_size = max(100, min(cfg.batch_size, 5000))
+        delete_sql = f"""
+            DELETE FROM {schema}.company c
+            WHERE ctid IN (
+                SELECT ctid FROM {schema}.company c
+                WHERE c.discr LIKE '%temp%'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM {schema}.registration r
+                      WHERE r.host_company_id = c.id
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM {schema}.billing b
+                      WHERE b.company_id = c.id
+                  )
+                LIMIT {{batch_size}}
+            );
+        """
+
+        deleted = _delete_in_batches(conn_pg, logger, delete_sql, batch_size)
+        logger.info(f"{deleted} obsolete companies deleted from staging.")
+
+    except Exception as e:
+        conn_pg.rollback()
+        logger.exception("Error cleaning staging temp companies: %s", e)
+
+
+def cleanup_staging_unreferenced_companies(
+    conn_pg: psycopg2.extensions.connection, cfg: Config
+) -> None:
+    """! @brief Removes companies in staging with no registrations nor billings.
+
+    This is stricter than temp-only cleanup: any staging company that has no
+    registration host reference and no billing reference is deleted, regardless
+    of discr. It prevents orphaned companies from lingering when they are no
+    longer linked to any business data.
+    """
+    logger = logging.getLogger("migration")
+    schema = cfg.pg_schema
+    logger.info("=== Cleaning unreferenced companies from staging ===")
+
+    try:
+        batch_size = max(100, min(cfg.batch_size, 5000))
+        delete_sql = f"""
+            DELETE FROM {schema}.company c
+            WHERE ctid IN (
+                SELECT ctid FROM {schema}.company c
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM {schema}.registration r
+                    WHERE r.host_company_id = c.id
+                )
+                AND NOT EXISTS (
+                    SELECT 1 FROM {schema}.billing b
+                    WHERE b.company_id = c.id
+                )
+                LIMIT {{batch_size}}
+            );
+        """
+
+        deleted = _delete_in_batches(conn_pg, logger, delete_sql, batch_size)
+        logger.info(f"{deleted} unreferenced companies deleted from staging.")
+
+    except Exception as e:
+        conn_pg.rollback()
+        logger.exception("Error cleaning unreferenced staging companies: %s", e)
 
 
 def cleanup_registration(conn_pg: psycopg2.extensions.connection, cfg: Config) -> None:
@@ -115,6 +318,46 @@ def cleanup_apprentice_city(
     except Exception as e:
         conn_pg.rollback()
         logger.exception(f"Error during city cleanup: {e}")
+
+
+def cleanup_obsolete_companies(
+    conn_pg: psycopg2.extensions.connection, cfg: Config
+) -> None:
+    """! @brief Removes obsolete companies (those with no registrations or billings).
+    @param conn_pg Active PostgreSQL connection.
+    @param cfg Configuration containing the temporary schema name.
+    @note Obsolete companies are those that:
+          - Have no associated registrations
+          - Have no associated billings
+    """
+    logger = logging.getLogger("migration")
+    schema = cfg.temp_schema
+    logger.info("=== Cleaning obsolete companies ===")
+
+    try:
+        batch_size = max(100, min(cfg.batch_size, 5000))
+        delete_sql = f"""
+            DELETE FROM {schema}.company c
+            WHERE ctid IN (
+                SELECT ctid FROM {schema}.company c
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM {schema}.registration r
+                    WHERE r.host_company_id = c.id
+                )
+                AND NOT EXISTS (
+                    SELECT 1 FROM {schema}.billing b
+                    WHERE b.company_id = c.id
+                )
+                LIMIT {{batch_size}}
+            );
+        """
+
+        deleted_count = _delete_in_batches(conn_pg, logger, delete_sql, batch_size)
+        logger.info(f"{deleted_count} obsolete companies deleted.")
+
+    except Exception as e:
+        conn_pg.rollback()
+        logger.exception("Error during obsolete companies cleanup: %s", e)
 
 
 def run_specific_cleanup(conn_pg: psycopg2.extensions.connection, cfg: Config) -> None:
@@ -290,9 +533,13 @@ def run_specific_cleanup(conn_pg: psycopg2.extensions.connection, cfg: Config) -
 # List of cleanup tasks
 CLEANUP_TASKS: List[Tuple[str, Callable]] = [  # type: ignore
     ("cleanup_temp_apprentice_company", cleanup_temp_apprentice_company),
+    ("sync_corrected_sirets", sync_corrected_sirets),
     ("cleanup_registration", cleanup_registration),
     ("cleanup_apprentice_city", cleanup_apprentice_city),
+    ("cleanup_obsolete_companies", cleanup_obsolete_companies),
     ("specific_cleanup", run_specific_cleanup),
+    ("cleanup_staging_temp_companies", cleanup_staging_temp_companies),
+    ("cleanup_staging_unreferenced_companies", cleanup_staging_unreferenced_companies),
 ]
 
 

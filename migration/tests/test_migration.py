@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from config import Config
 from database import MariaDBMetrics
 from migrate import parse_args
+from sync import ensure_updated_at_trigger, ensure_company_indexes, analyze_tables
 
 
 class TestConfig:
@@ -20,7 +21,7 @@ class TestConfig:
     def test_config_has_required_fields(self):
         """Test that configuration has all required fields."""
         config = Config()
-        
+
         # Verify that fields exist (even if empty)
         assert hasattr(config, 'mariadb_host')
         assert hasattr(config, 'mariadb_user')
@@ -37,19 +38,26 @@ class TestConfig:
     def test_config_default_values(self):
         """Test configuration default values."""
         config = Config()
-        
+
         # Default batch size
         assert isinstance(config.batch_size, int)
         assert config.batch_size > 0
-        
+
         # Default port
         assert config.mariadb_port == 3306 or config.mariadb_port > 0
+
+    def test_config_pool_defaults(self):
+        """Test that pool settings load with sane defaults."""
+        config = Config()
+        assert isinstance(config.use_pg_pool, bool)
+        assert config.pg_pool_min > 0
+        assert config.pg_pool_max >= config.pg_pool_min
 
     def test_config_validation_with_valid_env(self):
         """Test validation with valid configuration."""
         # Configuration is loaded from .env, should be valid
         config = Config()
-        
+
         # If values are defined in .env, validation should pass
         if config.mariadb_host and config.pg_host:
             config.validate()  # Should not raise exception
@@ -115,12 +123,12 @@ class TestMariaDBMetrics:
     def test_summary(self):
         """Test metrics summary generation."""
         metrics = MariaDBMetrics(slow_ms=100)
-        
+
         metrics.record("SELECT * FROM test", None, 0.05)
         metrics.record("INSERT INTO test VALUES (1)", None, 0.02)
-        
+
         summary = metrics.summary()
-        
+
         assert summary["total_queries"] == 2
         assert "by_op" in summary
         assert "SELECT" in summary["by_op"]
@@ -199,7 +207,7 @@ class TestConfigDataclass:
     def test_config_is_frozen(self):
         """Test that configuration is immutable."""
         config = Config()
-        
+
         # Config is frozen, so attributes cannot be modified
         with pytest.raises(AttributeError):
             config.mariadb_host = "new_host"
@@ -208,12 +216,298 @@ class TestConfigDataclass:
         """Test that environment variables are read."""
         # Values come from .env or defaults
         config = Config()
-        
+
         # Types must be correct
         assert isinstance(config.mariadb_port, int)
         assert isinstance(config.batch_size, int)
         assert isinstance(config.enable_db_metrics, bool)
         assert isinstance(config.api_enabled, bool)
+
+
+class TestUpdatedAtTrigger:
+    """Tests for ensure_updated_at_trigger helper."""
+
+    def test_ensure_updated_at_trigger_generates_sql(self, monkeypatch):
+        """Ensure the trigger DDL block is executed."""
+
+        executed: list[tuple] = []
+
+        class FakeCursor:
+            def execute(self, sql: str, params=None) -> None:
+                executed.append((sql, params))
+
+            def fetchone(self):
+                # Simulate that column exists, function/trigger don't exist
+                if "updated_at" in executed[-1][0]:
+                    return (True,)
+                return (False,)
+
+        class FakeCtx:
+            def __enter__(self) -> FakeCursor:
+                return FakeCursor()
+
+            def __exit__(self, exc_type, exc, tb) -> None:
+                return None
+
+        def fake_transaction(_conn):
+            return FakeCtx()
+
+        monkeypatch.setattr("sync.transaction", fake_transaction)
+
+        cfg = Config()
+        ensure_updated_at_trigger(object(), cfg, "company")
+
+        assert executed, "Trigger helper should execute SQL queries"
+        # Should have queries for checking column, function, trigger, and creating them
+        assert len(executed) >= 4, "Should check and create function and trigger"
+        assert any("CREATE FUNCTION" in sql for sql, _ in executed)
+        assert any("CREATE TRIGGER" in sql for sql, _ in executed)
+
+    def test_ensure_updated_at_trigger_handles_exception(self, monkeypatch):
+        """Function should not raise if transaction fails."""
+
+        def failing_transaction(_conn):
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr("sync.transaction", failing_transaction)
+
+        cfg = Config()
+        # Should swallow exceptions and log
+        ensure_updated_at_trigger(object(), cfg, "company")
+
+
+class TestIndexHelpers:
+    """Tests for index and analyze helpers."""
+
+    def test_ensure_company_indexes_creates_all_targets(self, monkeypatch):
+        executed: list[str] = []
+
+        class FakeCursor:
+            def __init__(self) -> None:
+                self.step = 0
+
+            def execute(self, sql: str, params=None) -> None:
+                executed.append(sql)
+
+            def fetchone(self):
+                return (False,)
+
+        class FakeCtx:
+            def __enter__(self) -> FakeCursor:
+                return FakeCursor()
+
+            def __exit__(self, exc_type, exc, tb) -> None:
+                return None
+
+        def fake_tx(_conn):
+            return FakeCtx()
+
+        monkeypatch.setattr("sync.transaction", fake_tx)
+
+        cfg = Config()
+        ensure_company_indexes(object(), cfg)
+
+        # We expect existence checks and create statements for 6 indexes (3 tables * 2 schemas)
+        create_statements = [sql for sql in executed if "CREATE INDEX" in sql]
+        assert len(create_statements) == 6
+        assert any("registration" in sql for sql in create_statements)
+        assert any("billing" in sql for sql in create_statements)
+
+    def test_analyze_tables_runs_analyze(self, monkeypatch):
+        executed: list[str] = []
+
+        class FakeCursor:
+            def execute(self, sql: str, params=None) -> None:
+                executed.append(sql)
+
+        class FakeCtx:
+            def __enter__(self) -> FakeCursor:
+                return FakeCursor()
+
+            def __exit__(self, exc_type, exc, tb) -> None:
+                return None
+
+        def fake_tx(_conn):
+            return FakeCtx()
+
+        monkeypatch.setattr("sync.transaction", fake_tx)
+
+        cfg = Config()
+        analyze_tables(object(), cfg, ["company", "registration"])
+
+        assert any("ANALYZE" in sql for sql in executed)
+
+class TestCleanupObsoleteCompanies:
+    """Tests for cleanup_obsolete_companies function."""
+
+    def test_cleanup_obsolete_companies_with_mock_connection(self):
+        """Test cleanup of obsolete companies with mocked PostgreSQL connection."""
+        from cleanup import cleanup_obsolete_companies
+
+        # Mock connection and cursor
+        mock_cursor = MagicMock()
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+
+        # Mock config
+        config = Config()
+
+        # Setup cursor responses
+        # First query returns 3 obsolete company IDs
+        mock_cursor.fetchall.return_value = [(1,), (2,), (3,)]
+        mock_cursor.rowcount = 3
+
+        # Execute cleanup
+        cleanup_obsolete_companies(mock_conn, config)
+
+        # Verify queries were executed
+        assert mock_cursor.execute.called
+
+        # Verify commit was called
+        assert mock_conn.commit.called
+
+    def test_cleanup_no_obsolete_companies(self):
+        """Test cleanup when there are no obsolete companies."""
+        from cleanup import cleanup_obsolete_companies
+
+        # Mock connection and cursor
+        mock_cursor = MagicMock()
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+
+        # Mock config
+        config = Config()
+
+        # Setup cursor responses - no obsolete companies
+        mock_cursor.fetchall.return_value = []
+
+        # Execute cleanup
+        cleanup_obsolete_companies(mock_conn, config)
+
+        # Verify queries were executed
+        assert mock_cursor.execute.called
+
+    def test_cleanup_obsolete_companies_error_handling(self):
+        """Test error handling in cleanup_obsolete_companies."""
+        from cleanup import cleanup_obsolete_companies
+
+        # Mock connection that raises an exception
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_conn.cursor.return_value.__enter__.side_effect = Exception("Database error")
+
+        # Mock config
+        config = Config()
+
+        # Should not raise exception but handle it gracefully
+        try:
+            cleanup_obsolete_companies(mock_conn, config)
+        except Exception:
+            pytest.fail("cleanup_obsolete_companies should handle exceptions gracefully")
+
+        # Verify rollback was called
+        assert mock_conn.rollback.called
+
+
+class TestSyncCorrectedSirets:
+    """Tests for sync_corrected_sirets function."""
+
+    def test_sync_corrected_sirets_finds_and_updates(self):
+        """Test that corrected SIRETs are detected and staging is updated."""
+        from cleanup import sync_corrected_sirets
+
+        mock_cursor = MagicMock()
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+
+        config = Config()
+
+        # First query returns one corrected SIRET
+        # Second query (replacement lookup) returns a replacement company
+        mock_cursor.fetchall.return_value = [("77363330800017", 100)]
+        mock_cursor.fetchone.return_value = (200,)  # replacement company id
+        mock_cursor.rowcount = 1
+
+        sync_corrected_sirets(mock_conn, config)
+
+        # Verify queries were executed
+        assert mock_cursor.execute.called
+        assert mock_conn.commit.called
+
+    def test_sync_corrected_sirets_no_corrections(self):
+        """Test when there are no corrected SIRETs."""
+        from cleanup import sync_corrected_sirets
+
+        mock_cursor = MagicMock()
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+
+        config = Config()
+
+        # No corrected SIRETs found
+        mock_cursor.fetchall.return_value = []
+
+        sync_corrected_sirets(mock_conn, config)
+
+        # Should return early without error
+        assert mock_cursor.execute.called
+
+    def test_sync_corrected_sirets_error_handling(self):
+        """Test error handling in sync_corrected_sirets."""
+        from cleanup import sync_corrected_sirets
+
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value.__enter__.side_effect = Exception("DB error")
+
+        config = Config()
+
+        # Should not raise but handle gracefully
+        try:
+            sync_corrected_sirets(mock_conn, config)
+        except Exception:
+            pytest.fail("sync_corrected_sirets should handle exceptions gracefully")
+
+        assert mock_conn.rollback.called
+
+
+class TestCleanupStagingTempCompanies:
+    """Tests for cleanup_staging_temp_companies function."""
+
+    def test_cleanup_staging_temp_companies(self):
+        """Test deletion of temp companies from staging."""
+        from cleanup import cleanup_staging_temp_companies
+
+        mock_cursor = MagicMock()
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+
+        config = Config()
+        mock_cursor.rowcount = 5
+
+        cleanup_staging_temp_companies(mock_conn, config)
+
+        assert mock_cursor.execute.called
+        assert mock_conn.commit.called
+
+
+class TestCleanupStagingUnreferencedCompanies:
+    """Tests for cleanup_staging_unreferenced_companies."""
+
+    def test_cleanup_unreferenced(self):
+        from cleanup import cleanup_staging_unreferenced_companies
+
+        mock_cursor = MagicMock()
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+        mock_cursor.rowcount = 4
+
+        config = Config()
+
+        cleanup_staging_unreferenced_companies(mock_conn, config)
+
+        assert mock_cursor.execute.called
+        assert mock_conn.commit.called
+
 
 
 if __name__ == "__main__":

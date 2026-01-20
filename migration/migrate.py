@@ -28,7 +28,7 @@ from database import mariadb_connection, postgres_connection
 from logger import setup_logger, setup_db_logger
 from migration_core import run_migration
 from database import init_mariadb_metrics, get_mariadb_metrics, ma_execute
-from sync import sync_tables
+from sync import sync_tables, analyze_tables
 from temp_tables import create_temp_schema, create_temp_tables, drop_temp_schema
 
 
@@ -236,6 +236,9 @@ def run_migration_cycle(args: argparse.Namespace, cfg: Config, logger: "logging.
             if cfg.api_enabled:
                 api_stats = api_enrich_companies(pg_conn, cfg, ma_conn)
                 logger.info("Company API summary: %s", json.dumps(api_stats))
+
+            # Refresh planner statistics for updated tables
+            analyze_tables(pg_conn, cfg, tables)
 
             # Log synchronization statistics
             try:

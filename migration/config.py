@@ -30,6 +30,9 @@ class Config:
     pg_password: str = os.getenv("PG_PASSWORD", "")
     pg_db: str = os.getenv("PG_DB", "")
     pg_schema: str = os.getenv("PG_SCHEMA", "staging")
+    use_pg_pool: bool = os.getenv("USE_PG_POOL", "false").lower() == "true"
+    pg_pool_min: int = int(os.getenv("PG_POOL_MIN", "1"))
+    pg_pool_max: int = int(os.getenv("PG_POOL_MAX", "5"))
     batch_size: int = int(os.getenv("BATCH_SIZE", "500"))
     log_file: str = os.getenv("MIGRATION_LOG", "logs/migration.log")
     temp_schema: str = os.getenv("PG_TEMP_SCHEMA", "temp_staging")
@@ -81,6 +84,11 @@ class Config:
             raise EnvironmentError(
                 f"Missing environment variables: {', '.join(missing)}"
             )
+
+        if self.pg_pool_min <= 0:
+            raise ValueError("PG_POOL_MIN must be positive")
+        if self.pg_pool_max < self.pg_pool_min:
+            raise ValueError("PG_POOL_MAX must be greater or equal to PG_POOL_MIN")
 
 
 # Table structure

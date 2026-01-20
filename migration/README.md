@@ -157,6 +157,9 @@ PG_TEMP_SCHEMA=temp_staging
 # Performance Settings
 # =============================================================================
 BATCH_SIZE=500
+USE_PG_POOL=false
+PG_POOL_MIN=1
+PG_POOL_MAX=5
 
 # =============================================================================
 # API Enrichment (Optional)
@@ -185,6 +188,9 @@ Logs include the process id and logger name for correlation; set `MIGRATION_LOG_
 | Parameter                 | Description                  | Default |
 |---------------------------|------------------------------|---------|
 | `BATCH_SIZE`              | Records per batch insert     | 500     |
+| `USE_PG_POOL`             | Enable PostgreSQL pool       | false   |
+| `PG_POOL_MIN`             | Pool minimum connections     | 1       |
+| `PG_POOL_MAX`             | Pool maximum connections     | 5       |
 | `API_REQUESTS_PER_SECOND` | API rate limit               | 7       |
 | `DB_METRICS_SLOW_MS`      | Slow query threshold (ms)    | 200     |
 | `MIGRATION_LOG_LEVEL`     | Log level (DEBUG/INFO/WARN)  | INFO    |
@@ -270,8 +276,26 @@ docker run -e MARIA_HOST=host.docker.internal \
 
 ### Phase 2: Cleanup (`--step cleanup`)
 
+**Data Normalization:**
+
 - Normalize text fields (names, addresses)
-- Identify and merge duplicates
+- Format names (uppercase) and first names (title case)
+
+**Data Deduplication:**
+
+- Identify and merge companies with duplicate SIRETs
+- Update all foreign key references (registrations, billings)
+
+**Remove Obsolete Data:**
+
+- Delete temporary marker entries (discr like '%temp%')
+- Remove apprentices with no valid registration
+- Remove registrations with invalid status or dates
+- Delete orphaned dimension records (cities, sectors, etc.)
+- **Remove obsolete companies** (those with no registrations or billings)
+
+**Data Validation:**
+
 - Validate data integrity
 - Apply business rules
 
@@ -339,6 +363,23 @@ For invalid SIRETs (Luhn checksum errors), the tool uses Hamming distance to sug
 | API calls per SIRET | ~1,400+ | ~14 | 100x fewer |
 | Processing time | ~100+ seconds | ~2 seconds | 50x faster |
 | Parallelization | Sequential | 4 workers | 4x concurrent |
+
+#### Important: Company Official Filter
+
+When retrieving company information from MariaDB for SIRET validation and correction:
+
+- **Priority**: Always use `company_official` discriminator first
+- **Rationale**: Ensures data comes from verified official company registries
+- **Fallback**: If no official company is found, query all companies (for compatibility)
+- **Implementation**: See `siret_correction.py::get_company_info_from_mariadb()`
+
+```python
+# Strategy 1: Try with company_official discriminator (preferred)
+WHERE company.siret = %s AND company.discr LIKE 'company_official%%'
+
+# Strategy 2: Fallback without discriminator filter
+WHERE company.siret = %s
+```
 
 ### OPCO Enrichment
 

@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from typing import Any, Dict, Iterator, List, Tuple
 
 import psycopg2
+from psycopg2 import pool
 import pymysql
 
 from config import Config
@@ -129,6 +130,7 @@ class MariaDBMetrics:
 
 
 _maria_metrics: MariaDBMetrics | None = None
+_pg_pool: pool.ThreadedConnectionPool | None = None
 
 
 def init_mariadb_metrics(cfg: Config) -> None:
@@ -204,6 +206,45 @@ def postgres_connection(cfg: Config) -> Iterator[psycopg2.extensions.connection]
     max_delay = 60  # seconds
     logger = logging.getLogger("migration")
 
+    def _configure_connection(conn: psycopg2.extensions.connection) -> None:
+        """Apply standard session settings for migration connections."""
+        conn.set_session(autocommit=False)
+        with conn.cursor() as cur:
+            cur.execute(f"SET search_path TO {cfg.pg_schema}")
+            cur.execute("SET session_replication_role = 'replica'")
+        conn.commit()
+
+    global _pg_pool
+
+    if cfg.use_pg_pool:
+        # Lazily initialize a thread-safe pool and reuse it for all callers
+        if _pg_pool is None:
+            _pg_pool = pool.ThreadedConnectionPool(
+                cfg.pg_pool_min,
+                cfg.pg_pool_max,
+                host=cfg.pg_host,
+                user=cfg.pg_user,
+                password=cfg.pg_password,
+                dbname=cfg.pg_db,
+                connect_timeout=10,
+            )
+
+        conn = _pg_pool.getconn()
+        try:
+            _configure_connection(conn)
+            yield conn
+        finally:
+            try:
+                if conn.status == psycopg2.extensions.STATUS_IN_TRANSACTION:
+                    conn.rollback()
+                with conn.cursor() as cur:
+                    cur.execute("SET session_replication_role = 'origin'")
+                    conn.commit()
+            except Exception as e:
+                logger.warning("Error cleaning pooled connection: %s", e)
+            _pg_pool.putconn(conn)
+        return
+
     conn = None
     last_exception = None
 
@@ -236,19 +277,14 @@ def postgres_connection(cfg: Config) -> Iterator[psycopg2.extensions.connection]
         raise last_exception or psycopg2.OperationalError(
             "Failed to connect to PostgreSQL after all retries"
         )
-    conn.set_session(autocommit=False)
+    _configure_connection(conn)
     try:
-        with conn.cursor() as cur:
-            cur.execute(f"SET search_path TO {cfg.pg_schema}")
-            cur.execute("SET session_replication_role = 'replica'")
-            conn.commit()
         yield conn
     except Exception:
         conn.rollback()
         raise
     finally:
         try:
-            # Ensure we are not in a failed transaction before executing other commands
             if conn.status == psycopg2.extensions.STATUS_IN_TRANSACTION:
                 conn.rollback()
             with conn.cursor() as cur:

@@ -18,6 +18,163 @@ from config import Config, CONFLICT_KEYS, TABLE_ORDER, PROTECTED_TABLES
 from database import get_pg_columns, transaction
 
 
+def ensure_company_indexes(
+    conn_pg: psycopg2.extensions.connection, cfg: Config
+) -> None:
+    """! @brief Ensures indexes exist on company.siret for faster lookups.
+
+    Creates indexes on SIRET plus foreign-key columns used in cleanup joins
+    across both staging and temp schemas. This speeds up SIRET-based lookups
+    and the NOT EXISTS checks used for cleanup.
+    """
+    logger = logging.getLogger("migration")
+    index_specs = [
+        ("company", "siret", "idx_{schema}_company_siret"),
+        ("registration", "host_company_id", "idx_{schema}_registration_host_company_id"),
+        ("billing", "company_id", "idx_{schema}_billing_company_id"),
+    ]
+
+    for schema in [cfg.pg_schema, cfg.temp_schema]:
+        for table, column, name_template in index_specs:
+            try:
+                with transaction(conn_pg) as cur:
+                    idx_name = name_template.format(schema=schema.replace(".", "_"))
+                    cur.execute(
+                        """
+                        SELECT EXISTS (
+                            SELECT 1 FROM pg_indexes
+                            WHERE schemaname = %s
+                              AND tablename = %s
+                              AND indexname = %s
+                        )
+                        """,
+                        (schema, table, idx_name)
+                    )
+                    exists = cur.fetchone()[0]
+
+                    if not exists:
+                        cur.execute(
+                            f"CREATE INDEX IF NOT EXISTS {idx_name} ON {schema}.{table} ({column})"
+                        )
+                        logger.info(
+                            f"Created index {idx_name} on {schema}.{table}({column})"
+                        )
+            except Exception as e:
+                logger.warning(
+                    f"Could not create index on {schema}.{table}({column}): {e}"
+                )
+
+
+def ensure_updated_at_trigger(
+    conn_pg: psycopg2.extensions.connection, cfg: Config, table: str
+) -> None:
+    """! @brief Ensures an updated_at trigger exists to preserve manual edits.
+
+    Adds a BEFORE UPDATE trigger that sets updated_at=NOW() on the target table,
+    only if the table has an updated_at column and the trigger/function are absent.
+    This protects manual corrections (with newer updated_at) from being overwritten
+    by the sync step.
+    """
+    logger = logging.getLogger("migration")
+    schema = cfg.pg_schema
+
+    try:
+        with transaction(conn_pg) as cur:
+            # Check if table has updated_at column
+            cur.execute(
+                """
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = %s
+                      AND table_name = %s
+                      AND column_name = 'updated_at'
+                )
+                """,
+                (schema, table)
+            )
+            has_updated_at = cur.fetchone()[0]
+
+            if not has_updated_at:
+                logger.debug(f"Table {schema}.{table} has no updated_at column, skipping trigger")
+                return
+
+            fn_name = f"{table}_touch_updated_at_fn"
+            trg_name = f"{table}_touch_updated_at_trg"
+
+            # Create function if missing
+            cur.execute(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM pg_proc p
+                    JOIN pg_namespace n ON n.oid = p.pronamespace
+                    WHERE p.proname = %s AND n.nspname = %s
+                )
+                """,
+                (fn_name, schema)
+            )
+            fn_exists = cur.fetchone()[0]
+
+            if not fn_exists:
+                cur.execute(
+                    f"""
+                    CREATE FUNCTION {schema}.{fn_name}()
+                    RETURNS trigger AS $func$
+                    BEGIN
+                        NEW.updated_at = NOW();
+                        RETURN NEW;
+                    END;
+                    $func$ LANGUAGE plpgsql;
+                    """
+                )
+                logger.debug(f"Created function {schema}.{fn_name}")
+
+            # Create trigger if missing
+            cur.execute(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM pg_trigger t
+                    JOIN pg_class c ON t.tgrelid = c.oid
+                    JOIN pg_namespace n ON n.oid = c.relnamespace
+                    WHERE t.tgname = %s
+                      AND c.relname = %s
+                      AND n.nspname = %s
+                )
+                """,
+                (trg_name, table, schema)
+            )
+            trg_exists = cur.fetchone()[0]
+
+            if not trg_exists:
+                cur.execute(
+                    f"""
+                    CREATE TRIGGER {trg_name}
+                    BEFORE UPDATE ON {schema}.{table}
+                    FOR EACH ROW EXECUTE FUNCTION {schema}.{fn_name}();
+                    """
+                )
+                logger.debug(f"Created trigger {trg_name} on {schema}.{table}")
+
+        logger.info("updated_at trigger ensured for %s.%s", schema, table)
+    except Exception as e:
+        logger.exception("Unable to ensure updated_at trigger for %s.%s: %s", schema, table, e)
+
+
+def analyze_tables(
+    conn_pg: psycopg2.extensions.connection, cfg: Config, tables: List[str]
+) -> None:
+    """! @brief Runs ANALYZE on the specified tables to refresh planner stats."""
+    logger = logging.getLogger("migration")
+    for table in tables:
+        try:
+            with transaction(conn_pg) as cur:
+                cur.execute(f"ANALYZE {cfg.pg_schema}.{table};")
+            logger.info("Analyzed %s.%s", cfg.pg_schema, table)
+        except Exception as e:
+            logger.warning("Failed to ANALYZE %s.%s: %s", cfg.pg_schema, table, e)
+
+
 def sync_company_sirets(
     conn_pg: psycopg2.extensions.connection, cfg: Config
 ) -> Dict[str, int]:
@@ -38,6 +195,12 @@ def sync_company_sirets(
     stats = {"inserts": 0, "mappings": 0}
 
     try:
+        # Ensure indexes exist for faster SIRET lookups
+        ensure_company_indexes(conn_pg, cfg)
+
+        # Ensure manual corrections bump updated_at automatically
+        ensure_updated_at_trigger(conn_pg, cfg, "company")
+
         with conn_pg.cursor() as cur:
             # 1. Insert new companies (SIRETs that don't exist in staging)
             # Only insert siret - other fields are populated by API enrichment
