@@ -235,6 +235,33 @@ def get_idcc_from_siret2idcc_api(siret: str, api_client: RateLimitedAPI) -> str:
         return None
 
 
+def normalize_paris_commune(commune: str) -> str:
+    """! @brief Normalizes Paris arrondissement codes to the main Paris code.
+
+    The API returns arrondissement codes (75101-75120) for Paris, but our
+    database only has the main Paris city code (75056). This function maps
+    all Paris arrondissements to the main Paris code.
+
+    @param commune INSEE code of the commune.
+    @return Normalized commune code (75056 for any Paris arrondissement).
+    """
+    if not commune:
+        return commune
+
+    # Paris arrondissements have codes 75101 to 75120
+    # Map them to the main Paris city code 75056
+    if commune.startswith("751") and len(commune) == 5:
+        try:
+            # Extract arrondissement number from last 2 digits (01-20)
+            arrondissement = int(commune[3:])
+            if 1 <= arrondissement <= 20:
+                return "75056"
+        except ValueError:
+            pass
+
+    return commune
+
+
 def find_city_id(
     conn_pg: psycopg2.extensions.connection, cfg: Config, commune: str
 ) -> int:
@@ -243,15 +270,19 @@ def find_city_id(
     @param cfg Configuration with schema information.
     @param commune INSEE code of the commune to search for.
     @return ID of the found city or 0 if not found.
+    @note Paris arrondissements (75101-75120) are mapped to Paris (75056).
     """
     if not commune:
         return 0
+
+    # Normalize Paris arrondissements to main Paris code
+    normalized_commune = normalize_paris_commune(commune)
 
     try:
         with conn_pg.cursor() as cur:
             cur.execute(
                 f"SELECT id FROM {cfg.pg_schema}.city WHERE code = %s LIMIT 1",
-                (commune,),
+                (normalized_commune,),
             )
             result = cur.fetchone()
             return result[0] if result else 0

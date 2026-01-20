@@ -18,7 +18,7 @@ class TestLogger:
     def test_setup_logger_returns_logger(self, temp_log_file, cleanup_loggers):
         """Test that setup_logger returns a logger."""
         logger = setup_logger(temp_log_file)
-        
+
         assert isinstance(logger, logging.Logger)
         assert logger.name == "migration"
         assert logger.level == logging.INFO
@@ -26,7 +26,7 @@ class TestLogger:
     def test_setup_db_logger_returns_logger(self, temp_log_file, cleanup_loggers):
         """Test that setup_db_logger returns a logger."""
         db_logger = setup_db_logger(temp_log_file)
-        
+
         assert isinstance(db_logger, logging.Logger)
         assert db_logger.name == "migration.db"
         assert db_logger.propagate is False
@@ -36,9 +36,9 @@ class TestLogger:
         # Call twice
         logger1 = setup_logger(temp_log_file)
         initial_handlers = len(logger1.handlers)
-        
+
         logger2 = setup_logger(temp_log_file)
-        
+
         # Should have same number of handlers
         assert len(logger2.handlers) == initial_handlers
         assert logger1 is logger2  # Same instance
@@ -60,34 +60,34 @@ class TestRateLimitedAPI:
         """Test minimum interval calculation."""
         client1 = RateLimitedAPI(requests_per_second=10)
         assert client1.min_interval == 0.1
-        
+
         client2 = RateLimitedAPI(requests_per_second=2)
         assert client2.min_interval == 0.5
 
     def test_api_client_has_session(self):
         """Test that client has HTTP session."""
         client = RateLimitedAPI(requests_per_second=5)
-        
+
         assert hasattr(client, 'session')
         assert client.session is not None
 
     def test_api_client_has_lock(self):
         """Test that client has lock for threading."""
         client = RateLimitedAPI(requests_per_second=5)
-        
+
         assert hasattr(client, 'lock')
 
     @patch('api_client.requests.Session')
     def test_api_request_method(self, mock_session_class, mock_api_session, mock_api_response):
         """Test request method."""
         mock_session_class.return_value = mock_api_session
-        
+
         client = RateLimitedAPI(requests_per_second=5)
         # Replace session with our mock
         client.session = mock_api_session
-        
+
         result = client.request("GET", "https://api.example.com/test")
-        
+
         assert result == mock_api_response
         mock_api_session.request.assert_called_once()
 
@@ -98,10 +98,50 @@ class TestAPIClientRetry:
     def test_session_has_retry_adapter(self):
         """Test that session has retry adapter."""
         client = RateLimitedAPI(requests_per_second=5)
-        
+
         # Verify HTTPS adapter is configured
         adapters = client.session.adapters
         assert "https://" in adapters
+
+
+class TestNormalizeParisCommune:
+    """Tests for Paris arrondissement normalization."""
+
+    def test_paris_arrondissement_1(self):
+        """Test Paris 1er arrondissement is normalized."""
+        from api_enrichment import normalize_paris_commune
+        assert normalize_paris_commune("75101") == "75056"
+
+    def test_paris_arrondissement_10(self):
+        """Test Paris 10eme arrondissement is normalized."""
+        from api_enrichment import normalize_paris_commune
+        assert normalize_paris_commune("75110") == "75056"
+
+    def test_paris_arrondissement_20(self):
+        """Test Paris 20eme arrondissement is normalized."""
+        from api_enrichment import normalize_paris_commune
+        assert normalize_paris_commune("75120") == "75056"
+
+    def test_non_paris_commune_unchanged(self):
+        """Test non-Paris communes are not modified."""
+        from api_enrichment import normalize_paris_commune
+        assert normalize_paris_commune("63113") == "63113"
+        assert normalize_paris_commune("69123") == "69123"
+
+    def test_empty_commune(self):
+        """Test empty commune returns empty."""
+        from api_enrichment import normalize_paris_commune
+        assert normalize_paris_commune("") == ""
+        assert normalize_paris_commune(None) is None
+
+    def test_other_75_codes_unchanged(self):
+        """Test other 75xxx codes are not modified."""
+        from api_enrichment import normalize_paris_commune
+        # 75056 is Paris itself
+        assert normalize_paris_commune("75056") == "75056"
+        # Invalid arrondissement numbers should not be changed
+        assert normalize_paris_commune("75121") == "75121"
+        assert normalize_paris_commune("75100") == "75100"
 
 
 if __name__ == "__main__":
