@@ -294,8 +294,12 @@ MENU_HIDE_USER_INFO_ITEMS = [
     "List Roles",
 ]
 
-# Public role has no permissions by default
-PUBLIC_ROLE_LIKE = "Gamma"
+# Require authentication: disable anonymous (Public) access
+# Hides Superset UI and menu for non-logged-in users
+PUBLIC_ROLE_NAME = None
+
+# Do not grant Public role permissions
+PUBLIC_ROLE_LIKE = None
 
 
 # Custom security manager to enforce dashboard-only access
