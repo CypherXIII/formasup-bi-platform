@@ -21,6 +21,294 @@ from datetime import timedelta
 
 logger = logging.getLogger(__name__)
 
+
+def _get_login_html(error_msg=None, csrf_token=None):
+    """Generate custom French login page HTML."""
+    error_html = ""
+    if error_msg:
+        error_html = f'''
+        <div class="alert-error">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M10 6V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="10" cy="13" r="0.75" fill="currentColor"/>
+          </svg>
+          <span>{error_msg}</span>
+        </div>'''
+
+    csrf_input = ""
+    if csrf_token:
+        csrf_input = f'<input type="hidden" name="csrf_token" value="{csrf_token}">'
+
+    return f'''<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion - FormaSup BI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <style>
+    * {{
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }}
+
+    :root {{
+      --primary: #134169;
+      --primary-dark: #0f344f;
+      --secondary: #7EB0C1;
+      --text-primary: #1a202c;
+      --text-secondary: #4a5568;
+      --border: #e2e8f0;
+      --bg-input: #f7fafc;
+      --error: #c53030;
+      --error-bg: #fff5f5;
+    }}
+
+    html {{
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }}
+
+    body {{
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(to bottom right, #f7fafc 0%, #edf2f7 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      position: relative;
+    }}
+
+    body::before {{
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+    }}
+
+    .login-card {{
+      background: white;
+      width: 100%;
+      max-width: 420px;
+      border-radius: 12px;
+      box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.05),
+        0 10px 30px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }}
+
+    .login-header {{
+      padding: 48px 48px 32px;
+      text-align: center;
+      background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+      border-bottom: 1px solid var(--border);
+    }}
+
+    .login-logo {{
+      margin-bottom: 24px;
+    }}
+
+    .login-logo img {{
+      max-width: 160px;
+      height: auto;
+      margin: 0 auto;
+    }}
+
+    .login-title {{
+      color: var(--text-primary);
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      margin-bottom: 8px;
+    }}
+
+    .login-subtitle {{
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 400;
+    }}
+
+    .login-body {{
+      padding: 40px 48px 48px;
+    }}
+
+    .alert-error {{
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--error-bg);
+      border: 1px solid #feb2b2;
+      border-radius: 8px;
+      color: var(--error);
+      font-size: 14px;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }}
+
+    .alert-error svg {{
+      flex-shrink: 0;
+      margin-top: 2px;
+    }}
+
+    .form-group {{
+      margin-bottom: 20px;
+    }}
+
+    .form-label {{
+      display: block;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }}
+
+    .form-control {{
+      width: 100%;
+      height: 44px;
+      padding: 0 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-size: 15px;
+      color: var(--text-primary);
+      background: var(--bg-input);
+      transition: all 0.2s ease;
+    }}
+
+    .form-control:hover {{
+      background: white;
+      border-color: #cbd5e0;
+    }}
+
+    .form-control:focus {{
+      outline: none;
+      background: white;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(19, 65, 105, 0.08);
+    }}
+
+    .form-control::placeholder {{
+      color: #a0aec0;
+    }}
+
+    .btn-login {{
+      width: 100%;
+      height: 44px;
+      padding: 0 24px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 8px;
+    }}
+
+    .btn-login:hover {{
+      background: var(--primary-dark);
+      box-shadow: 0 4px 12px rgba(19, 65, 105, 0.2);
+    }}
+
+    .btn-login:active {{
+      transform: translateY(1px);
+    }}
+
+    .login-footer {{
+      padding: 20px 48px;
+      text-align: center;
+      background: #fafbfc;
+      border-top: 1px solid var(--border);
+    }}
+
+    .login-footer-text {{
+      color: var(--text-secondary);
+      font-size: 13px;
+    }}
+
+    @media (max-width: 540px) {{
+      body {{
+        padding: 20px;
+      }}
+
+      .login-header,
+      .login-body,
+      .login-footer {{
+        padding-left: 32px;
+        padding-right: 32px;
+      }}
+
+      .login-header {{
+        padding-top: 40px;
+        padding-bottom: 28px;
+      }}
+
+      .login-body {{
+        padding-top: 32px;
+        padding-bottom: 40px;
+      }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-logo">
+        <img src="/static/assets/images/logo.png" alt="FormaSup BI" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=&quot;font-size:22px;font-weight:700;color:var(--primary)&quot;>FormaSup BI</div>'">
+      </div>
+      <h1 class="login-title">Connexion</h1>
+      <p class="login-subtitle">Accédez à votre plateforme Business Intelligence</p>
+    </div>
+
+    <div class="login-body">
+      {error_html}
+      <form method="post" action="/login/" autocomplete="on" novalidate>
+        {csrf_input}
+        <div class="form-group">
+          <label class="form-label" for="username">Identifiant</label>
+          <input
+            type="text"
+            name="username"
+            id="username"
+            class="form-control"
+            placeholder="nom.prenom"
+            autocomplete="username"
+            autofocus
+            required
+          >
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Mot de passe</label>
+          <input
+            type="password"
+            name="password"
+            id="password"
+            class="form-control"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          >
+        </div>
+        <button type="submit" class="btn-login">Se connecter</button>
+      </form>
+    </div>
+
+    <div class="login-footer">
+      <p class="login-footer-text">© 2026 FormaSup Auvergne</p>
+    </div>
+  </div>
+</body>
+</html>'''
+
 # =============================================================================
 # SECURITY
 # =============================================================================
@@ -34,6 +322,11 @@ WTF_CSRF_EXEMPT_LIST = [
     "superset.charts.data.api.data",
     "superset.dashboards.api.cache_dashboard_screenshot",
 ]
+
+# Disable Flask-WTF's automatic CSRF protection for all requests
+# We'll handle CSRF manually for the login page in the before_request hook
+WTF_CSRF_SSL_STRICT = False
+WTF_CSRF_TIME_LIMIT = None  # No time limit for tokens
 
 # Rate limiting for production
 RATELIMIT_ENABLED = os.environ.get("SUPERSET_ENV") == "production"
@@ -129,6 +422,11 @@ THEME_DEFAULT = {
         "colorPrimaryTextHover": "#0f3457",
         "colorPrimaryTextActive": "#0a2239",
 
+        # Links
+        "colorLink": "#134169",
+        "colorLinkHover": "#0f344f",
+        "colorLinkActive": "#0a2239",
+
         # Info color palette (Secondary blue)
         "colorInfo": "#7EB0C1",
         "colorInfoBg": "#e8f4f7",
@@ -153,6 +451,14 @@ THEME_DEFAULT = {
         "colorWarningTextHover": "#f0ad4e",
         "colorWarningTextActive": "#e79d31",
 
+        # Semantic colors (success / error)
+        "colorSuccess": "#2e7d32",
+        "colorSuccessBg": "#edf7ed",
+        "colorSuccessBorder": "#b7e1cd",
+        "colorError": "#c53030",
+        "colorErrorBg": "#fff5f5",
+        "colorErrorBorder": "#feb2b2",
+
         # Text colors
         "colorTextBase": "#2d3748",
         "colorText": "#134169",
@@ -160,35 +466,125 @@ THEME_DEFAULT = {
         "colorTextTertiary": "#718096",
         "colorTextQuaternary": "#a0aec0",
 
-        # Background colors
-        "colorBgBase": "#ffffff",
-        "colorBgContainer": "#ffffff",
-        "colorBgElevated": "#ffffff",
-        "colorBgLayout": "#ffffff",
+        # Fills for subtle UI elements
+        "colorFill": "#f4f7fb",
+        "colorFillSecondary": "#eef3f8",
+        "colorFillTertiary": "#e8eef4",
+        "colorFillQuaternary": "#dfebf5",
 
-        # Border colors
-        "colorBorder": "#7EB0C1",
-        "colorBorderSecondary": "#7EB0C1",
+        # Background colors (soft light theme)
+        "colorBgBase": "#ffffff",           # Main content background (white)
+        "colorBgContainer": "#f8fafb",      # Cards / panels (very light gray)
+        "colorBgElevated": "#ffffff",       # Modals / popovers (white)
+        "colorBgLayout": "#f4f7fb",         # Layout chrome (soft gray so content stays white)
+
+        # Navbar/Header specific (make navbar stand out)
+        "colorBgHeader": "#134169",         # Navbar background (FormaSup blue)
+        "colorHeaderBg": "#134169",         # Alt token used by some components
+        "colorTextLightSolid": "#ffffff",   # Text on dark backgrounds (navbar text)
+        "colorHeaderText": "#ffffff",       # Alt token for header text
+
+        # Border colors (subtle separators)
+        "colorBorder": "#d5e3ee",
+        "colorBorderSecondary": "#c7d6e4",
 
         # Border radius
-        "borderRadius": 6,
-        "borderRadiusXS": 2,
-        "borderRadiusSM": 4,
-        "borderRadiusLG": 8,
+        "borderRadius": 8,
+        "borderRadiusXS": 3,
+        "borderRadiusSM": 6,
+        "borderRadiusLG": 12,
 
-        # Spacing
+        # Spacing and control heights
         "padding": 16,
         "paddingSM": 12,
         "paddingLG": 20,
         "margin": 16,
         "marginSM": 12,
         "marginLG": 20,
+        "controlHeight": 40,
+        "controlHeightSM": 32,
+        "controlHeightLG": 44,
 
-        # Shadows
-        "boxShadow": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
-        "boxShadowSecondary": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        # Typography sizing (slightly more readable)
+        "fontSize": 14,
+        "fontSizeHeading5": 16,
+        "fontSizeHeading4": 18,
+
+        # Shadows (softer, premium feel)
+        "boxShadow": "0 10px 30px rgba(19, 65, 105, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04)",
+        "boxShadowSecondary": "0 6px 18px rgba(19, 65, 105, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)",
+    },
+    # Component-level refinements for a more polished look
+    "components": {
+      # Header/Navbar
+      "Layout": {
+        "headerBg": "#134169",
+        "headerColor": "#ffffff",
+      },
+      # Sidebar & menus
+      "Menu": {
+        "itemSelectedBg": "#e8f4f7",
+        "itemHoverBg": "#f0f6fa",
+        "itemSelectedColor": "#0f344f",
+      },
+      # Primary buttons
+      "Button": {
+        "colorPrimary": "#134169",
+        "colorPrimaryHover": "#0f344f",
+        "colorPrimaryActive": "#0a2239",
+        "controlHeight": 40,
+      },
+      # Tabs
+      "Tabs": {
+        "itemSelectedColor": "#134169",
+        "inkBarColor": "#134169",
+      },
+      # Tables
+      "Table": {
+        "headerBg": "#f4f7fb",
+        "rowHoverBg": "#fbfdff",
+      },
+      # Tag & Badge
+      "Tag": {
+        "defaultBg": "#eef3f8",
+        "defaultColor": "#134169",
+      },
+      "Badge": {
+        "colorBgContainer": "#eef3f8",
+        "colorText": "#134169",
+      },
+      # Tooltip
+      "Tooltip": {
+        "colorBgSpotlight": "#134169",
+      },
+      # Pagination
+      "Pagination": {
+        "itemActiveBg": "#e8f4f7",
+      },
+      # Select
+      "Select": {
+        "optionSelectedBg": "#e8f4f7",
+      },
+      # Cards/Panels
+      "Card": {
+        "colorBgContainer": "#ffffff",
+      },
     },
 }
+
+# Custom categorical palette aligned with FormaSup colors
+EXTRA_CATEGORICAL_COLOR_SCHEMES = [
+    {
+        "name": "FormaSup",
+        "label": "FormaSup",
+        "colors": [
+            "#134169", "#7EB0C1", "#f3be72", "#4c8c2b", "#7851a9",
+            "#d95f02", "#2ca02c", "#e15759", "#76b7b2", "#59a14f",
+        ],
+    }
+]
+DEFAULT_COLOR_SCHEME = "FormaSup"
+DEFAULT_CATEGORICAL_COLOR_SCHEME = "FormaSup"
 
 # Disable dark mode and theme switching
 # Setting THEME_DARK = None forces light theme only (no switcher shown)
@@ -302,18 +698,6 @@ PUBLIC_ROLE_NAME = None
 PUBLIC_ROLE_LIKE = None
 
 
-# Custom security manager to enforce dashboard-only access
-class FormaSupersetSecurityManager:
-    """
-    Custom configuration for role-based access control.
-
-    Role hierarchy:
-    - Admin: Full access to everything
-    - Viewer: Dashboard access only (no SQL Lab, no chart creation)
-    """
-    pass
-
-
 # Role configuration for dashboard-only access
 # These permissions should be configured via Superset UI:
 # Settings > List Roles > Create "Viewer" role with only:
@@ -399,6 +783,7 @@ def FLASK_APP_MUTATOR(app):
     """
     Custom Flask app configuration.
 
+    - Custom French login page
     - Adds language pack permission to Public/Gamma roles
     - Configures cache headers for translation endpoints
     - Redirects non-admin users to dashboard list after login
@@ -406,12 +791,187 @@ def FLASK_APP_MUTATOR(app):
     Args:
         app: The Flask application instance
     """
+    # Override Flask-WTF's CSRF protection for /login/ POST requests
+    from flask_wtf.csrf import CSRFProtect
+    original_protect = CSRFProtect.protect
+
+    def protect_override(self):
+        from flask import request
+        # Skip CSRF check for our custom login form
+        if request.path in ['/login/', '/login'] and request.method == 'POST':
+            return  # Skip protection, we validate manually
+        return original_protect(self)
+
+    CSRFProtect.protect = protect_override
+
+    # Mark /login/ requests to bypass Flask-WTF CSRF check
+    @app.before_request
+    def mark_login_bypass():
+        from flask import request, g
+        if request.path in ['/login/', '/login'] and request.method == 'POST':
+            g.csrf_bypass = True
+
+    # Serve custom French login page before Superset handles it
+    @app.before_request
+    def serve_french_login():
+        from flask import request, make_response
+        from flask_login import current_user, login_user
+        from flask_wtf.csrf import generate_csrf, validate_csrf
+        from wtforms.validators import ValidationError
+
+        if request.path != '/login/' and request.path != '/login':
+            return None
+
+        if current_user.is_authenticated:
+            return None
+
+        # Get CSRF token for the form
+        csrf_token = generate_csrf()
+
+        if request.method == 'POST':
+            from superset import security_manager
+            from flask import redirect
+
+            # Validate CSRF token
+            try:
+                validate_csrf(request.form.get('csrf_token'))
+            except ValidationError:
+                error_msg = 'Erreur de sécurité (token invalide). Veuillez réessayer.'
+                return make_response(_get_login_html(error_msg, csrf_token), 200)
+
+            username = request.form.get('username', '').strip()
+            password = request.form.get('password', '')
+
+            if not username or not password:
+                error_msg = 'Veuillez remplir tous les champs'
+                return make_response(_get_login_html(error_msg, csrf_token), 200)
+
+            user = security_manager.find_user(username=username)
+            if user:
+                # Verify password using Werkzeug's security functions
+                from werkzeug.security import check_password_hash
+                try:
+                    if check_password_hash(user.password, password):
+                        login_user(user)
+                        # Redirect to dashboard list after successful login
+                        return redirect('/dashboard/list/')
+                except Exception:
+                    pass
+
+            # Password check failed or user not found
+            error_msg = 'Identifiant ou mot de passe incorrect'
+            return make_response(_get_login_html(error_msg, csrf_token), 200)
+
+        return make_response(_get_login_html(csrf_token=csrf_token), 200)
+
     @app.after_request
     def add_cache_headers(response):
         # Disable cache on translation endpoints for fresh translations
         request_path = response.headers.get("Location", "")
         if "/language_pack/" in request_path or "/api/v1/common/" in request_path:
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        return response
+
+    # Force login for unauthenticated users and set French locale
+    @app.before_request
+    def require_login():
+        from flask import request, redirect, session, g
+        from flask_login import current_user
+
+        # Force French locale for all requests
+        try:
+            from flask_babel import refresh
+            session['locale'] = 'fr'
+            g.locale = 'fr'
+            refresh()
+        except Exception:
+            pass
+
+        # Allow access to login page, static files, API endpoints, and health check
+        allowed_paths = ["/login/", "/login", "/static/", "/api/", "/health", "/language_pack/"]
+
+        if any(request.path.startswith(path) for path in allowed_paths):
+            return None
+
+        # Redirect to login if not authenticated
+        if not current_user.is_authenticated:
+            return redirect("/login/")
+
+        return None
+
+    # Hide navbar on login page only
+    @app.after_request
+    def hide_navbar_on_login(response):
+        from flask import request
+        from flask_login import current_user
+
+        try:
+            # Only inject CSS on login page
+            if request.path != "/login/" or current_user.is_authenticated:
+                return response
+
+            if response.status_code != 200:
+                return response
+
+            if not (response.content_type or "").startswith("text/html"):
+                return response
+
+            content = response.get_data(as_text=True)
+            css = (
+                "<style>"
+                ".ant-layout-header,.navbar,header{display:none!important;}"
+                ".ant-layout,.ant-layout-content{padding-top:0!important;margin-top:0!important;}"
+                "</style>"
+            )
+
+            if "</head>" in content and css not in content:
+                content = content.replace("</head>", f"{css}</head>", 1)
+                response.set_data(content)
+        except Exception:
+            pass
+
+        return response
+
+    # Inject custom theme CSS into all HTML pages
+    @app.after_request
+    def inject_custom_theme(response):
+        """Inject FormaSup premium theme CSS into all HTML responses."""
+        from flask import request
+
+        try:
+            # Skip non-HTML responses
+            if response.status_code != 200:
+                return response
+
+            if not (response.content_type or "").startswith("text/html"):
+                return response
+
+            # Skip login page (has its own styling)
+            if request.path in ["/login/", "/login"]:
+                return response
+
+            content = response.get_data(as_text=True)
+
+            # Inject custom CSS link before </head>
+            css_link = '<link rel="stylesheet" href="/static/assets/css/formasup-theme.css" type="text/css">'
+
+            if "</head>" in content and css_link not in content:
+                content = content.replace("</head>", f"{css_link}</head>", 1)
+                response.set_data(content)
+        except Exception:
+            pass
+
+        return response
+
+    # Force French language on login page
+    @app.after_request
+    def set_french_locale(response):
+        from flask import request
+
+        # Set locale cookie for French language on login page
+        if request.path == "/login/" and response.status_code == 200:
+            response.set_cookie("SUPERSET_LOCALE", "fr", max_age=31536000, samesite="Lax")
+
         return response
 
     # Redirect non-admin users to dashboard list after login
@@ -487,15 +1047,17 @@ def FLASK_APP_MUTATOR(app):
 
 
 # =============================================================================
-# CUSTOM FONTS
+# CUSTOM CSS & FONTS
 # =============================================================================
 
 # Custom font configuration
 # Load external fonts at runtime without rebuilding the application
-# For local fonts, use the path to your CSS file
 CUSTOM_FONT_URLS = [
     "/static/assets/fonts/booster-next-fy.css",
 ]
+
+# Custom CSS file for premium theme styling
+CUSTOM_CSS = "/static/assets/css/formasup-theme.css"
 
 
 # =============================================================================

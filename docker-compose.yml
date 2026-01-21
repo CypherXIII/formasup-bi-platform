@@ -20,9 +20,11 @@ services:
     volumes:
       - superset_home:/app/superset_home
       - ./superset/config/superset_config.py:/app/pythonpath/superset_config.py:ro
+      - ./superset/config/custom_security.py:/app/pythonpath/custom_security.py:ro
       - ./superset/assets/images/logo.png:/app/superset/static/assets/images/logo.png:ro
       - ./superset/assets/images/favicon.ico:/app/superset/static/assets/images/favicon.ico:ro
       - ./superset/assets/fonts:/app/superset/static/assets/fonts:ro
+      - ./superset/assets/css:/app/superset/static/assets/css:ro
     depends_on:
       superset-db:
         condition: service_healthy
