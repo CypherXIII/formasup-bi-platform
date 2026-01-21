@@ -17,6 +17,30 @@ chmod 600 /root/.pgpass
 # Export PGPASSFILE to ensure pg_dump uses it
 export PGPASSFILE=/root/.pgpass
 
+# Function to wait for database to be ready
+wait_for_database() {
+    local host=$1
+    local user=$2
+    local db=$3
+    local max_attempts=30
+    local attempt=0
+
+    echo "[$(date)] Waiting for database ${db} at ${host} to be ready..."
+
+    while [ ${attempt} -lt ${max_attempts} ]; do
+        if PGPASSWORD="${PGPASSWORD}" psql -h "${host}" -U "${user}" -d "${db}" -c "SELECT 1" > /dev/null 2>&1; then
+            echo "[$(date)] Database ${db} at ${host} is ready"
+            return 0
+        fi
+        attempt=$((attempt + 1))
+        echo "[$(date)] Waiting for ${db}... (attempt ${attempt}/${max_attempts})"
+        sleep 2
+    done
+
+    echo "[$(date)] Failed to connect to database ${db} at ${host} after ${max_attempts} attempts" >&2
+    return 1
+}
+
 # Configuration
 BACKUP_HOUR=$(echo "${BACKUP_CRON_SCHEDULE:-0 3 * * *}" | awk '{print $2}')
 LAST_RUN_FILE="/var/log/last_backup_date.txt"
@@ -51,22 +75,31 @@ echo "[$(date)] Backup service started"
 echo "[$(date)] Schedule: ${BACKUP_CRON_SCHEDULE:-0 3 * * *} (runs at ${BACKUP_HOUR}:00)"
 echo "[$(date)] Retention: ${BACKUP_RETENTION_DAYS:-7} days"
 
-# Check if backup should run on startup (missed backup)
-if should_run_backup; then
-    echo "[$(date)] Scheduled backup time has passed, running backup now..."
-    if /usr/local/bin/backup.sh; then
-        mark_backup_completed
-        echo "[$(date)] Startup backup completed successfully"
-    else
-        echo "[$(date)] Startup backup failed" >&2
-    fi
-elif [ "${RUN_BACKUP_ON_START:-false}" = "true" ]; then
-    echo "[$(date)] Running initial backup (RUN_BACKUP_ON_START=true)..."
-    if /usr/local/bin/backup.sh; then
-        mark_backup_completed
-        echo "[$(date)] Initial backup completed successfully"
-    else
-        echo "[$(date)] Initial backup failed" >&2
+# Wait for databases to be ready before attempting any backup
+if ! wait_for_database "${PG_HOST}" "${PG_USER}" "${PG_DB}"; then
+    echo "[$(date)] FSA database not available, skipping startup backup" >&2
+    # Continue to cron setup - scheduled backups will retry
+elif ! PGPASSWORD="${SUPERSET_DB_PASSWORD}" wait_for_database "superset-db" "${SUPERSET_DB_USER}" "superset"; then
+    echo "[$(date)] Superset database not available, skipping startup backup" >&2
+    # Continue to cron setup - scheduled backups will retry
+else
+    # Check if backup should run on startup (missed backup)
+    if should_run_backup; then
+        echo "[$(date)] Scheduled backup time has passed, running backup now..."
+        if /usr/local/bin/backup.sh; then
+            mark_backup_completed
+            echo "[$(date)] Startup backup completed successfully"
+        else
+            echo "[$(date)] Startup backup failed" >&2
+        fi
+    elif [ "${RUN_BACKUP_ON_START:-false}" = "true" ]; then
+        echo "[$(date)] Running initial backup (RUN_BACKUP_ON_START=true)..."
+        if /usr/local/bin/backup.sh; then
+            mark_backup_completed
+            echo "[$(date)] Initial backup completed successfully"
+        else
+            echo "[$(date)] Initial backup failed" >&2
+        fi
     fi
 fi
 
