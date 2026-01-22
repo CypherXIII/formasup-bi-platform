@@ -1,14 +1,47 @@
 # Production Docker Compose configuration
 #
 # This file is intended to be used in a production environment.
-# It disables public port exposure for databases and uses a more
-# robust restart policy.
+# It adds nginx reverse proxy with SSL, disables public port exposure
+# for databases, and uses production environment settings.
 #
 # Usage:
 # docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 #
+# Prerequisites:
+# 1. Place SSL certificates in ./deploy/nginx/ssl/:
+#    - fullchain.pem (certificate + chain)
+#    - privkey.pem (private key)
+# 2. Or use Let's Encrypt with certbot
+#
 services:
+  # Nginx reverse proxy with SSL termination
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-fsa
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      superset:
+        condition: service_healthy
+    networks:
+      - fsa-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   superset:
+    # Production environment enables HTTPS features
+    environment:
+      SUPERSET_ENV: "production"
+    # Remove direct port exposure (nginx handles external traffic)
+    ports: []
     restart: always
 
   postgres:

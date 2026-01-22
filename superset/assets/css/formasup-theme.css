@@ -23,7 +23,6 @@
 :root {
   /* Typography - BoosterNextFY font family */
   --font-family: 'BoosterNextFY', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-family-code: 'Fira Code', 'Monaco', 'Consolas', monospace;
   --font-size-base: 14px;
   --font-size-sm: 13px;
   --font-size-xs: 12px;
@@ -41,32 +40,21 @@
 
   /* Brand Colors - Secondary/Info (Light Blue) */
   --color-info: #7EB0C1;
-  --color-info-hover: #5a9fb3;
-  --color-info-active: #4a8fa3;
   --color-info-bg: #e8f4f7;
-  --color-info-bg-hover: #d1e9ef;
-  --color-info-border: #7EB0C1;
 
   /* Brand Colors - Warning (Accent Gold) */
   --color-warning: #f3be72;
-  --color-warning-hover: #f0ad4e;
-  --color-warning-active: #e79d31;
   --color-warning-bg: #fdf5e6;
-  --color-warning-bg-hover: #fbe8c7;
-  --color-warning-border: #f3be72;
 
   /* Semantic Colors - Success */
   --color-success: #2e7d32;
   --color-success-bg: #edf7ed;
-  --color-success-border: #b7e1cd;
 
   /* Semantic Colors - Error */
   --color-error: #c53030;
   --color-error-bg: #fff5f5;
-  --color-error-border: #feb2b2;
 
   /* Text Colors */
-  --color-text-base: #2d3748;
   --color-text: #134169;
   --color-text-secondary: #4a5568;
   --color-text-tertiary: #718096;
@@ -78,16 +66,13 @@
   --color-link-active: #0a2239;
 
   /* Fill Colors (subtle UI elements) */
-  --color-fill: #f4f7fb;
-  --color-fill-secondary: #eef3f8;
-  --color-fill-tertiary: #e8eef4;
-  --color-fill-quaternary: #dfebf5;
+  --color-fill: #f8fafb;
 
   /* Background Colors */
   --color-bg-base: #ffffff;           /* Main content background */
   --color-bg-container: #f8fafb;      /* Cards / panels */
   --color-bg-elevated: #ffffff;       /* Modals / popovers */
-  --color-bg-layout: #f4f7fb;         /* Layout chrome */
+  --color-bg-layout: #f8fafb;         /* Layout chrome */
   --color-bg-header: #134169;         /* Navbar background */
   --color-text-light-solid: #ffffff;  /* Text on dark backgrounds */
 
@@ -97,13 +82,11 @@
 
   /* Shadows (softer, premium feel) */
   --shadow-base: 0 10px 30px rgba(19, 65, 105, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-secondary: 0 6px 18px rgba(19, 65, 105, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
 
   /* Border Radius */
-  --radius-xs: 3px;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -113,19 +96,14 @@
   --padding-sm: 12px;
   --padding-lg: 20px;
   --margin: 16px;
-  --margin-sm: 12px;
   --margin-lg: 20px;
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
   --space-lg: 24px;
-  --space-xl: 32px;
 
   /* Control Heights */
   --control-height: 40px;
-  --control-height-sm: 32px;
-  --control-height-lg: 44px;
-
   /* Transitions */
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
@@ -501,7 +479,8 @@ textarea.ant-input {
   box-shadow: 0 0 0 3px rgba(19, 65, 105, 0.1) !important;
 }
 
-.ant-input-affix-wrapper .ant-input {
+.ant-input-affix-wrapper .ant-input,
+.ant-picker-input > input {
   height: auto !important;
   padding: 0 !important;
   border: none !important;
@@ -562,6 +541,18 @@ textarea.ant-input {
   outline: none !important;
 }
 
+/* Normalize all nested inputs (affix-wrapper, picker, input-number) */
+.ant-input-affix-wrapper .ant-input,
+.ant-picker-input > input,
+.ant-input-number-input {
+  height: auto !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  text-align: left !important;
+}
+
 /* Checkbox */
 .ant-checkbox-inner {
   width: 18px !important;
@@ -602,6 +593,12 @@ textarea.ant-input {
   background: var(--color-bg-base) !important;
   border-radius: var(--radius-lg) !important;
   overflow: hidden !important;
+}
+
+/* Remove table scroll shadow */
+.ant-table-wrapper .ant-table-ping-right:not(.ant-table-has-fix-right) .ant-table-container::after,
+.ant-table-wrapper .ant-table-ping-left:not(.ant-table-has-fix-left) .ant-table-container::before {
+  box-shadow: none !important;
 }
 
 .ant-table-thead > tr > th {

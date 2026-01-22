@@ -94,3 +94,9 @@ backups-files/*.tar.gz
 siret_corrections.txt
 siret_invalid.txt
 siret_errors_api.txt
+
+# SSL certificates (never commit private keys)
+deploy/nginx/ssl/*.pem
+deploy/nginx/ssl/*.key
+deploy/nginx/ssl/*.crt
+!deploy/nginx/ssl/README.md

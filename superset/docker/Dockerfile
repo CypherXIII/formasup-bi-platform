@@ -60,7 +60,13 @@ RUN chown -R superset:superset /app/superset/static/assets/images/ && \
 COPY config/superset_config.py /app/pythonpath/
 RUN chown superset:superset /app/pythonpath/superset_config.py
 
+# Copy startup script
+COPY docker/docker-init.sh /app/docker-init.sh
+RUN chmod +x /app/docker-init.sh && chown superset:superset /app/docker-init.sh
+
 USER superset
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8088/health || exit 1
+
+CMD ["/app/docker-init.sh"]

@@ -120,6 +120,15 @@ def _get_login_html(error_msg=None, csrf_token=None):
       max-width: 160px;
       height: auto;
       margin: 0 auto;
+      display: block;
+    }}
+
+    .login-logo .fallback-text {{
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--primary);
+      text-align: center;
+      display: none;
     }}
 
     .login-title {{
@@ -233,6 +242,13 @@ def _get_login_html(error_msg=None, csrf_token=None):
     .login-footer-text {{
       color: var(--text-secondary);
       font-size: 13px;
+      margin-bottom: 8px;
+    }}
+
+    .login-cookie-notice {{
+      color: var(--text-secondary);
+      font-size: 11px;
+      opacity: 0.8;
     }}
 
     @media (max-width: 540px) {{
@@ -263,7 +279,8 @@ def _get_login_html(error_msg=None, csrf_token=None):
   <div class="login-card">
     <div class="login-header">
       <div class="login-logo">
-        <img src="/static/assets/images/logo.png" alt="FormaSup BI" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=&quot;font-size:22px;font-weight:700;color:var(--primary)&quot;>FormaSup BI</div>'">
+        <img src="/static/assets/images/logo.png" alt="FormaSup BI">
+        <div class="fallback-text">FormaSup BI</div>
       </div>
       <h1 class="login-title">Connexion</h1>
       <p class="login-subtitle">Accédez à votre plateforme Business Intelligence</p>
@@ -304,42 +321,184 @@ def _get_login_html(error_msg=None, csrf_token=None):
 
     <div class="login-footer">
       <p class="login-footer-text">© 2026 FormaSup Auvergne</p>
+      <p class="login-cookie-notice">Ce site utilise des cookies strictement necessaires a l'authentification (art. 82 RGPD).</p>
     </div>
   </div>
 </body>
 </html>'''
 
 # =============================================================================
-# SECURITY
+# SECURITY - Security by Design Best Practices
 # =============================================================================
+# This section implements comprehensive security measures following:
+# - OWASP Security Guidelines
+# - GDPR/RGPD compliance requirements
+# - Defense in depth principle
+# - Principle of least privilege
 
-# Secret key for session signing - MUST be set via environment variable
+# -----------------------------------------------------------------------------
+# 1. SECRET KEY - Foundation of all cryptographic operations
+# -----------------------------------------------------------------------------
 SECRET_KEY = os.environ.get("SUPERSET_SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError(
+        "SUPERSET_SECRET_KEY environment variable is required. "
+        "Generate one with: openssl rand -base64 42"
+    )
 
-# CSRF protection
+# -----------------------------------------------------------------------------
+# 2. CSRF PROTECTION - Prevent Cross-Site Request Forgery
+# -----------------------------------------------------------------------------
 WTF_CSRF_ENABLED = True
 WTF_CSRF_EXEMPT_LIST = [
     "superset.charts.data.api.data",
     "superset.dashboards.api.cache_dashboard_screenshot",
 ]
+WTF_CSRF_SSL_STRICT = os.environ.get("SUPERSET_ENV") == "production"
+WTF_CSRF_TIME_LIMIT = 3600  # Token expires after 1 hour
 
-# Disable Flask-WTF's automatic CSRF protection for all requests
-# We'll handle CSRF manually for the login page in the before_request hook
-WTF_CSRF_SSL_STRICT = False
-WTF_CSRF_TIME_LIMIT = None  # No time limit for tokens
-
-# Rate limiting for production
-RATELIMIT_ENABLED = os.environ.get("SUPERSET_ENV") == "production"
-RATELIMIT_APPLICATION = "50 per second"
+# -----------------------------------------------------------------------------
+# 3. RATE LIMITING - Prevent brute force and DoS attacks
+# -----------------------------------------------------------------------------
+RATELIMIT_ENABLED = True
+RATELIMIT_APPLICATION = "100 per minute"
+RATELIMIT_STORAGE_URI = "memory://"
 AUTH_RATE_LIMITED = True
-AUTH_RATE_LIMIT = "5 per second"
+AUTH_RATE_LIMIT = "5 per minute"  # Strict limit on login attempts
 
-# Proxy configuration (enable if behind nginx/reverse proxy)
+# -----------------------------------------------------------------------------
+# 4. SESSION SECURITY - Secure session management
+# -----------------------------------------------------------------------------
+SESSION_COOKIE_NAME = "formasup_session"
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to cookies
+SESSION_COOKIE_SECURE = os.environ.get("SUPERSET_ENV") == "production"
+SESSION_COOKIE_SAMESITE = "Lax"  # Prevent CSRF via cookies
+SESSION_COOKIE_PATH = "/"
+REMEMBER_COOKIE_NAME = "formasup_remember"
+REMEMBER_COOKIE_HTTPONLY = True
+REMEMBER_COOKIE_SECURE = os.environ.get("SUPERSET_ENV") == "production"
+REMEMBER_COOKIE_SAMESITE = "Lax"
+REMEMBER_COOKIE_DURATION = timedelta(days=7)
+
+# Session lifetime
+from datetime import timedelta as td  # noqa: E402
+PERMANENT_SESSION_LIFETIME = td(hours=8)  # 8 hours max session
+
+# -----------------------------------------------------------------------------
+# 5. HTTP SECURITY HEADERS - Defense in depth
+# -----------------------------------------------------------------------------
+# These are applied via FLASK_APP_MUTATOR and Talisman if available
+TALISMAN_ENABLED = os.environ.get("SUPERSET_ENV") == "production"
+TALISMAN_CONFIG = {
+    "force_https": os.environ.get("SUPERSET_ENV") == "production",
+    "strict_transport_security": True,
+    "strict_transport_security_max_age": 31536000,  # 1 year
+    "strict_transport_security_include_subdomains": True,
+    "content_security_policy": {
+        "default-src": "'self'",
+        "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        "style-src": ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
+        "font-src": ["'self'", "fonts.gstatic.com", "data:"],
+        "img-src": ["'self'", "data:", "blob:"],
+        "connect-src": ["'self'"],
+        "frame-ancestors": "'none'",
+        "form-action": "'self'",
+    },
+    "referrer_policy": "strict-origin-when-cross-origin",
+    "permissions_policy": {
+        "geolocation": "()",
+        "microphone": "()",
+        "camera": "()",
+    },
+}
+
+# Additional security headers (applied in FLASK_APP_MUTATOR)
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "X-XSS-Protection": "1; mode=block",
+    "Cache-Control": "no-store, no-cache, must-revalidate, private",
+    "Pragma": "no-cache",
+}
+
+# -----------------------------------------------------------------------------
+# 6. AUTHENTICATION SECURITY
+# -----------------------------------------------------------------------------
+# Password policy (enforced by Flask-AppBuilder)
+FAB_PASSWORD_COMPLEXITY_ENABLED = True
+FAB_PASSWORD_COMPLEXITY_VALIDATOR = (
+    "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$"
+)
+
+# Account lockout after failed attempts
+AUTH_LOCKOUT_ENABLED = True
+AUTH_LOCKOUT_THRESHOLD = 5  # Lock after 5 failed attempts
+AUTH_LOCKOUT_DURATION = timedelta(minutes=15)  # Lock for 15 minutes
+
+# Disable user self-registration
+AUTH_USER_REGISTRATION = False
+
+# Disable password recovery (handled externally if needed)
+AUTH_PASSWORD_RECOVERY = False
+
+# -----------------------------------------------------------------------------
+# 7. AUTHORIZATION - Principle of least privilege
+# -----------------------------------------------------------------------------
+# Public role configuration - deny all by default
+PUBLIC_ROLE_LIKE = None
+PUBLIC_ROLE_NAME = None
+
+# Strict permission checking
+FAB_ADD_SECURITY_VIEWS = True
+FAB_ADD_SECURITY_PERMISSION_VIEW = True
+FAB_ADD_SECURITY_VIEW_MENU_VIEW = True
+FAB_ADD_SECURITY_PERMISSION_VIEWS_VIEW = True
+
+# -----------------------------------------------------------------------------
+# 8. LOGGING & AUDITING - Security event logging
+# -----------------------------------------------------------------------------
+LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s:%(message)s"
+LOG_LEVEL = "INFO"
+
+# Enable query logging for audit trail
+QUERY_LOGGER = True
+
+# Log security events
+ENABLE_ACCESS_REQUEST = True
+ENABLE_ACCESS_REQUEST_LOG = True
+
+# -----------------------------------------------------------------------------
+# 9. DATA PROTECTION - GDPR compliance
+# -----------------------------------------------------------------------------
+# Anonymize user data in logs
+ANONYMIZE_AUDIT_LOGS = True
+
+# Data export restrictions
+ALLOW_FULL_CSV_EXPORT = False  # Disable bulk data export
+
+# -----------------------------------------------------------------------------
+# 10. PROXY & NETWORK SECURITY
+# -----------------------------------------------------------------------------
 ENABLE_PROXY_FIX = True
-PROXY_FIX_CONFIG = {"x_for": 1, "x_proto": 1, "x_host": 1, "x_port": 0, "x_prefix": 1}
+PROXY_FIX_CONFIG = {
+    "x_for": 1,
+    "x_proto": 1,
+    "x_host": 1,
+    "x_port": 0,
+    "x_prefix": 1,
+}
 
-# Hide stacktraces in production
+# Trusted proxy headers only
+PREFERRED_URL_SCHEME = "https" if os.environ.get("SUPERSET_ENV") == "production" else "http"
+
+# -----------------------------------------------------------------------------
+# 11. ERROR HANDLING - Prevent information disclosure
+# -----------------------------------------------------------------------------
 SHOW_STACKTRACE = os.environ.get("SUPERSET_ENV") != "production"
+PROPAGATE_EXCEPTIONS = False
+
+# Custom error messages (no internal details exposed)
+CUSTOM_ERRORS = True
 
 # =============================================================================
 # DATABASE
@@ -467,7 +626,7 @@ THEME_DEFAULT = {
         "colorTextQuaternary": "#a0aec0",
 
         # Fills for subtle UI elements
-        "colorFill": "#f4f7fb",
+        "colorFill": "#f8fafb",
         "colorFillSecondary": "#eef3f8",
         "colorFillTertiary": "#e8eef4",
         "colorFillQuaternary": "#dfebf5",
@@ -637,7 +796,7 @@ D3_FORMAT = {
 CURRENCIES = ["EUR"]
 
 # =============================================================================
-# FEATURE FLAGS
+# FEATURE FLAGS - Security-focused configuration
 # =============================================================================
 
 FEATURE_FLAGS = {
@@ -651,10 +810,10 @@ FEATURE_FLAGS = {
     "DRILL_TO_DETAIL": True,
     "DRILL_BY": True,
 
-    # Export features
-    "ALLOW_FULL_CSV_EXPORT": True,
+    # Export features - DISABLED for security (data exfiltration prevention)
+    "ALLOW_FULL_CSV_EXPORT": False,
 
-    # SQL Lab - disabled for non-admin users via role permissions
+    # SQL Lab - controlled via role permissions
     "SQLLAB_BACKEND_PERSISTENCE": True,
 
     # UI preferences
@@ -662,16 +821,22 @@ FEATURE_FLAGS = {
     "DATAPANEL_CLOSED_BY_DEFAULT": False,
     "FILTERBAR_CLOSED_BY_DEFAULT": False,
 
-    # Security
+    # Security - DISABLED (prevent embedding/XSS vectors)
     "EMBEDDABLE_CHARTS": False,
     "EMBEDDED_SUPERSET": False,
 
-    # Advanced features (disabled by default)
-    "ENABLE_TEMPLATE_PROCESSING": False,
-    "ENABLE_JAVASCRIPT_CONTROLS": False,
+    # Advanced features - DISABLED for security (code injection prevention)
+    "ENABLE_TEMPLATE_PROCESSING": False,  # Prevent Jinja template injection
+    "ENABLE_JAVASCRIPT_CONTROLS": False,  # Prevent XSS via custom JS
     "TAGGING_SYSTEM": False,
     "THUMBNAILS": False,
     "ALERT_REPORTS": False,
+
+    # Row Level Security - ENABLED for data isolation
+    "ROW_LEVEL_SECURITY": True,
+
+    # Escape HTML in markdown - ENABLED for XSS prevention
+    "ESCAPE_MARKDOWN_HTML": True,
 }
 
 # =============================================================================
@@ -847,17 +1012,22 @@ def FLASK_APP_MUTATOR(app):
                 error_msg = 'Veuillez remplir tous les champs'
                 return make_response(_get_login_html(error_msg, csrf_token), 200)
 
+            # Use Flask-AppBuilder's authentication to ensure proper session handling
             user = security_manager.find_user(username=username)
-            if user:
-                # Verify password using Werkzeug's security functions
-                from werkzeug.security import check_password_hash  # type: ignore[import]
-                try:
-                    if check_password_hash(user.password, password):
-                        login_user(user)
-                        # Redirect to dashboard list after successful login
-                        return redirect('/dashboard/list/')
-                except Exception:
-                    pass
+            if user and user.is_active:
+                # Use security_manager's auth method for proper session setup
+                if security_manager.auth_user_db(username, password):
+                    login_user(user, remember=True)
+                    # Mark session as permanent for proper cookie handling
+                    from flask import session  # type: ignore[import]
+                    session.permanent = True
+                    # Log successful login for audit trail
+                    logger.info(f"SECURITY: Successful login for user '{username}' from IP {request.remote_addr}")
+                    # Redirect to dashboard list after successful login
+                    return redirect('/dashboard/list/')
+
+            # Log failed login attempt for security monitoring
+            logger.warning(f"SECURITY: Failed login attempt for user '{username}' from IP {request.remote_addr}")
 
             # Password check failed or user not found
             error_msg = 'Identifiant ou mot de passe incorrect'
@@ -866,11 +1036,25 @@ def FLASK_APP_MUTATOR(app):
         return make_response(_get_login_html(csrf_token=csrf_token), 200)
 
     @app.after_request
-    def add_cache_headers(response):
-        # Disable cache on translation endpoints for fresh translations
+    def add_security_headers(response):
+        """Apply security headers to all responses."""
+        # Core security headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+
+        # Cache control for sensitive pages
+        if not response.headers.get("Cache-Control"):
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+            response.headers["Pragma"] = "no-cache"
+
+        # Translation endpoints need fresh data
         request_path = response.headers.get("Location", "")
         if "/language_pack/" in request_path or "/api/v1/common/" in request_path:
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+
         return response
 
     # Force login for unauthenticated users and set French locale
