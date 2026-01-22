@@ -758,7 +758,7 @@ def COMMON_BOOTSTRAP_OVERRIDES_FUNC(bootstrap_data: dict) -> dict:
         Modified bootstrap data with language pack included
     """
     try:
-        from superset.translations.utils import get_language_pack
+        from superset.translations.utils import get_language_pack  # type: ignore[import]
 
         locale = bootstrap_data.get("common", {}).get("locale", "fr")
         if locale == "fr":
@@ -792,11 +792,11 @@ def FLASK_APP_MUTATOR(app):
         app: The Flask application instance
     """
     # Override Flask-WTF's CSRF protection for /login/ POST requests
-    from flask_wtf.csrf import CSRFProtect
+    from flask_wtf.csrf import CSRFProtect  # type: ignore[import]
     original_protect = CSRFProtect.protect
 
     def protect_override(self):
-        from flask import request
+        from flask import request # type: ignore
         # Skip CSRF check for our custom login form
         if request.path in ['/login/', '/login'] and request.method == 'POST':
             return  # Skip protection, we validate manually
@@ -807,17 +807,18 @@ def FLASK_APP_MUTATOR(app):
     # Mark /login/ requests to bypass Flask-WTF CSRF check
     @app.before_request
     def mark_login_bypass():
-        from flask import request, g
+        from flask import request  # type: ignore[import]
         if request.path in ['/login/', '/login'] and request.method == 'POST':
+            from flask import g  # type: ignore[import]
             g.csrf_bypass = True
 
     # Serve custom French login page before Superset handles it
     @app.before_request
     def serve_french_login():
-        from flask import request, make_response
-        from flask_login import current_user, login_user
-        from flask_wtf.csrf import generate_csrf, validate_csrf
-        from wtforms.validators import ValidationError
+        from flask import request, make_response  # type: ignore[import]
+        from flask_login import current_user, login_user  # type: ignore[import]
+        from flask_wtf.csrf import generate_csrf, validate_csrf  # type: ignore[import]
+        from wtforms.validators import ValidationError  # type: ignore[import]
 
         if request.path != '/login/' and request.path != '/login':
             return None
@@ -829,8 +830,8 @@ def FLASK_APP_MUTATOR(app):
         csrf_token = generate_csrf()
 
         if request.method == 'POST':
-            from superset import security_manager
-            from flask import redirect
+            from superset import security_manager  # type: ignore[import]
+            from flask import redirect  # type: ignore[import]
 
             # Validate CSRF token
             try:
@@ -849,7 +850,7 @@ def FLASK_APP_MUTATOR(app):
             user = security_manager.find_user(username=username)
             if user:
                 # Verify password using Werkzeug's security functions
-                from werkzeug.security import check_password_hash
+                from werkzeug.security import check_password_hash  # type: ignore[import]
                 try:
                     if check_password_hash(user.password, password):
                         login_user(user)
@@ -875,12 +876,12 @@ def FLASK_APP_MUTATOR(app):
     # Force login for unauthenticated users and set French locale
     @app.before_request
     def require_login():
-        from flask import request, redirect, session, g
-        from flask_login import current_user
+        from flask import request, redirect, session, g  # type: ignore[import]
+        from flask_login import current_user  # type: ignore[import]
 
         # Force French locale for all requests
         try:
-            from flask_babel import refresh
+            from flask_babel import refresh  # type: ignore[import]
             session['locale'] = 'fr'
             g.locale = 'fr'
             refresh()
@@ -902,8 +903,8 @@ def FLASK_APP_MUTATOR(app):
     # Hide navbar on login page only
     @app.after_request
     def hide_navbar_on_login(response):
-        from flask import request
-        from flask_login import current_user
+        from flask import request  # type: ignore[import]
+        from flask_login import current_user  # type: ignore[import]
 
         try:
             # Only inject CSS on login page
@@ -936,7 +937,7 @@ def FLASK_APP_MUTATOR(app):
     @app.after_request
     def inject_custom_theme(response):
         """Inject FormaSup premium theme CSS into all HTML responses."""
-        from flask import request
+        from flask import request  # type: ignore[import]
 
         try:
             # Skip non-HTML responses
@@ -966,7 +967,7 @@ def FLASK_APP_MUTATOR(app):
     # Force French language on login page
     @app.after_request
     def set_french_locale(response):
-        from flask import request
+        from flask import request  # type: ignore[import]
 
         # Set locale cookie for French language on login page
         if request.path == "/login/" and response.status_code == 200:
@@ -978,8 +979,8 @@ def FLASK_APP_MUTATOR(app):
     @app.after_request
     def redirect_non_admin_to_dashboards(response):
         """Redirect non-admin users to dashboard list instead of welcome page."""
-        from flask import request, redirect, g
-        from flask_login import current_user
+        from flask import redirect  # type: ignore[import]
+        from flask_login import current_user  # type: ignore[import]
 
         # Only intercept redirects to welcome page after successful login
         if (response.status_code == 302 and
@@ -997,8 +998,8 @@ def FLASK_APP_MUTATOR(app):
 
     with app.app_context():
         try:
-            from superset import security_manager
-            from superset.extensions import db
+            from superset import security_manager  # type: ignore[import]
+            from superset.extensions import db  # type: ignore[import]
 
             # Find the language pack permission
             perm = security_manager.find_permission_view_menu(
