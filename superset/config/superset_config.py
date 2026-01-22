@@ -460,7 +460,7 @@ THEME_DEFAULT = {
         "colorErrorBorder": "#feb2b2",
 
         # Text colors
-        "colorTextBase": "#2d3748",
+        "colorTextBase": "#2d4830",
         "colorText": "#134169",
         "colorTextSecondary": "#4a5568",
         "colorTextTertiary": "#718096",
@@ -476,7 +476,7 @@ THEME_DEFAULT = {
         "colorBgBase": "#ffffff",           # Main content background (white)
         "colorBgContainer": "#f8fafb",      # Cards / panels (very light gray)
         "colorBgElevated": "#ffffff",       # Modals / popovers (white)
-        "colorBgLayout": "#f4f7fb",         # Layout chrome (soft gray so content stays white)
+        "colorBgLayout": "#f8fafb",         # Layout chrome (soft gray so content stays white #f4f7fb)
 
         # Navbar/Header specific (make navbar stand out)
         "colorBgHeader": "#134169",         # Navbar background (FormaSup blue)

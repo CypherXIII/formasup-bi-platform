@@ -1,0 +1,893 @@
+/**
+ * FormaSup BI -  Theme
+ * ============================
+ * Clean, professional UI for Apache Superset 6.0.0
+ *
+ * Architecture:
+ * 1. CSS Custom Properties (Design Tokens)
+ * 2. Base & Typography
+ * 3. Layout (Header, Sidebar, Content)
+ * 4. Components (Cards, Buttons, Forms, Tables, etc.)
+ * 5. Superset Specific
+ * 6. Accessibility
+ *
+ * Color Palette:
+ * - Primary: #134169 (FormaSup Blue)
+ * - Secondary: #7EB0C1 (Light Blue)
+ * - Accent: #f3be72 (Gold)
+ */
+
+/* =============================================================================
+   1. DESIGN TOKENS (Synchronized with superset_config.py THEME_DEFAULT)
+   ============================================================================= */
+:root {
+  /* Typography - BoosterNextFY font family */
+  --font-family: 'BoosterNextFY', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-code: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  --font-size-base: 14px;
+  --font-size-sm: 13px;
+  --font-size-xs: 12px;
+  --font-size-xl: 18px;
+  --line-height: 1.5;
+
+  /* Brand Colors - Primary (FormaSup Blue) */
+  --color-primary: #134169;
+  --color-primary-hover: #0f3457;
+  --color-primary-active: #0a2239;
+  --color-primary-bg: #e8f4f7;
+  --color-primary-bg-hover: #d1e9ef;
+  --color-primary-border: #134169;
+  --color-primary-border-hover: #0f3457;
+
+  /* Brand Colors - Secondary/Info (Light Blue) */
+  --color-info: #7EB0C1;
+  --color-info-hover: #5a9fb3;
+  --color-info-active: #4a8fa3;
+  --color-info-bg: #e8f4f7;
+  --color-info-bg-hover: #d1e9ef;
+  --color-info-border: #7EB0C1;
+
+  /* Brand Colors - Warning (Accent Gold) */
+  --color-warning: #f3be72;
+  --color-warning-hover: #f0ad4e;
+  --color-warning-active: #e79d31;
+  --color-warning-bg: #fdf5e6;
+  --color-warning-bg-hover: #fbe8c7;
+  --color-warning-border: #f3be72;
+
+  /* Semantic Colors - Success */
+  --color-success: #2e7d32;
+  --color-success-bg: #edf7ed;
+  --color-success-border: #b7e1cd;
+
+  /* Semantic Colors - Error */
+  --color-error: #c53030;
+  --color-error-bg: #fff5f5;
+  --color-error-border: #feb2b2;
+
+  /* Text Colors */
+  --color-text-base: #2d3748;
+  --color-text: #134169;
+  --color-text-secondary: #4a5568;
+  --color-text-tertiary: #718096;
+  --color-text-quaternary: #a0aec0;
+
+  /* Link Colors */
+  --color-link: #134169;
+  --color-link-hover: #0f344f;
+  --color-link-active: #0a2239;
+
+  /* Fill Colors (subtle UI elements) */
+  --color-fill: #f4f7fb;
+  --color-fill-secondary: #eef3f8;
+  --color-fill-tertiary: #e8eef4;
+  --color-fill-quaternary: #dfebf5;
+
+  /* Background Colors */
+  --color-bg-base: #ffffff;           /* Main content background */
+  --color-bg-container: #f8fafb;      /* Cards / panels */
+  --color-bg-elevated: #ffffff;       /* Modals / popovers */
+  --color-bg-layout: #f4f7fb;         /* Layout chrome */
+  --color-bg-header: #134169;         /* Navbar background */
+  --color-text-light-solid: #ffffff;  /* Text on dark backgrounds */
+
+  /* Border Colors */
+  --color-border: #d5e3ee;
+  --color-border-secondary: #c7d6e4;
+
+  /* Shadows (softer, premium feel) */
+  --shadow-base: 0 10px 30px rgba(19, 65, 105, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-secondary: 0 6px 18px rgba(19, 65, 105, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+
+  /* Border Radius */
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Spacing */
+  --padding: 16px;
+  --padding-sm: 12px;
+  --padding-lg: 20px;
+  --margin: 16px;
+  --margin-sm: 12px;
+  --margin-lg: 20px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* Control Heights */
+  --control-height: 40px;
+  --control-height-sm: 32px;
+  --control-height-lg: 44px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+}
+
+/* =============================================================================
+   2. BASE & TYPOGRAPHY
+   ============================================================================= */
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height);
+  color: var(--color-text);
+  background-color: var(--color-bg-layout);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-text);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--space-sm) 0;
+}
+
+h1 { font-size: 28px; }
+h2 { font-size: 24px; }
+h3 { font-size: 20px; }
+h4 { font-size: 18px; }
+h5 { font-size: 16px; }
+h6 { font-size: 14px; }
+
+a {
+  color: var(--color-link);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-link-hover);
+}
+
+::selection {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-fill);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* =============================================================================
+   3. LAYOUT
+   ============================================================================= */
+
+/* 3.1 Header / Navbar
+   -------------------------------------------------------------------------- */
+.ant-layout-header,
+header[class*="Header"],
+[class*="HeaderContainer"] {
+  background: var(--color-bg-header) !important;
+  border-bottom: none !important;
+  box-shadow: var(--shadow-base) !important;
+  height: 56px !important;
+  min-height: 56px !important;
+  padding: 0 var(--padding-lg) !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Header content - force white text */
+.ant-layout-header,
+.ant-layout-header *,
+header[class*="Header"],
+header[class*="Header"] * {
+  color: var(--color-text-light-solid) !important;
+}
+
+/* Header logo */
+.ant-layout-header img,
+header[class*="Header"] img {
+  max-height: 36px;
+  filter: brightness(0) invert(1);
+}
+
+/* Header menu - horizontal navigation */
+.ant-layout-header .ant-menu {
+  background: transparent !important;
+  border: none !important;
+  line-height: 56px !important;
+}
+
+.ant-layout-header .ant-menu-item,
+.ant-layout-header .ant-menu-submenu-title {
+  height: 56px !important;
+  line-height: 56px !important;
+  padding: 0 var(--padding) !important;
+  margin: 0 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+.ant-layout-header .ant-menu-item:hover,
+.ant-layout-header .ant-menu-submenu-title:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--color-text-light-solid) !important;
+}
+
+.ant-layout-header .ant-menu-item-selected,
+.ant-layout-header .ant-menu-submenu-selected > .ant-menu-submenu-title {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: var(--color-text-light-solid) !important;
+}
+
+.ant-layout-header .ant-menu-item-selected::after,
+.ant-layout-header .ant-menu-submenu-selected::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: var(--padding);
+  right: var(--padding);
+  height: 3px;
+  background: var(--color-text-light-solid);
+  border-radius: 3px 3px 0 0;
+}
+
+/* Header dropdown menus (submenus that appear below header) */
+.ant-menu-submenu-popup .ant-menu {
+  background: var(--color-bg-elevated) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+  border: 1px solid var(--color-border) !important;
+  padding: var(--space-xs) !important;
+}
+
+.ant-menu-submenu-popup .ant-menu-item {
+  color: var(--color-text) !important;
+  height: var(--control-height) !important;
+  line-height: var(--control-height) !important;
+  padding: 0 var(--padding) !important;
+  margin: 2px 0 !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+.ant-menu-submenu-popup .ant-menu-item:hover {
+  background: var(--color-fill) !important;
+  color: var(--color-primary) !important;
+}
+
+/* 3.2 Sidebar
+   -------------------------------------------------------------------------- */
+.ant-layout-sider {
+  background: var(--color-bg-container) !important;
+  border-right: 1px solid var(--color-border) !important;
+}
+
+/* Sidebar menu - vertical navigation */
+.ant-layout-sider .ant-menu {
+  background: var(--color-bg-container) !important;
+  border: none !important;
+  padding: var(--padding-sm) !important;
+}
+
+.ant-layout-sider .ant-menu-item,
+.ant-layout-sider .ant-menu-submenu-title {
+  color: var(--color-text-secondary) !important;
+  height: var(--control-height) !important;
+  line-height: var(--control-height) !important;
+  padding: 0 var(--padding) !important;
+  margin: 2px 0 !important;
+  border-radius: var(--radius-md) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.ant-layout-sider .ant-menu-item:hover,
+.ant-layout-sider .ant-menu-submenu-title:hover {
+  background: var(--color-fill) !important;
+  color: var(--color-primary) !important;
+}
+
+.ant-layout-sider .ant-menu-item-selected {
+  background: var(--color-primary-bg) !important;
+  color: var(--color-primary) !important;
+  font-weight: 500 !important;
+}
+
+.ant-layout-sider .ant-menu-item-selected::after {
+  display: none !important;
+}
+
+/* 3.3 Main Content
+   -------------------------------------------------------------------------- */
+.ant-layout-content {
+  background: var(--color-bg-layout) !important;
+  padding: var(--padding-lg) !important;
+}
+
+/* =============================================================================
+   4. COMPONENTS
+   ============================================================================= */
+
+/* 4.1 Cards
+   -------------------------------------------------------------------------- */
+.ant-card {
+  background: var(--color-bg-base) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: box-shadow var(--transition-normal) !important;
+}
+
+.ant-card:hover {
+  box-shadow: var(--shadow-md) !important;
+}
+
+.ant-card-head {
+  background: var(--color-fill) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  padding: var(--padding) var(--padding-lg) !important;
+  min-height: auto !important;
+}
+
+.ant-card-head-title {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--color-text) !important;
+}
+
+.ant-card-body {
+  padding: var(--padding-lg) !important;
+}
+
+/* 4.2 Buttons
+   -------------------------------------------------------------------------- */
+.ant-btn {
+  height: var(--control-height) !important;
+  padding: 0 var(--padding) !important;
+  border-radius: var(--radius-md) !important;
+  font-weight: 500 !important;
+  font-size: var(--font-size-base) !important;
+  transition: all var(--transition-fast) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: var(--space-xs) !important;
+}
+
+/* Primary Button */
+.ant-btn-primary {
+  background: var(--color-primary) !important;
+  border: none !important;
+  color: var(--color-text-light-solid) !important;
+  box-shadow: none !important;
+}
+
+.ant-btn-primary:hover {
+  background: var(--color-primary-hover) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(19, 65, 105, 0.2) !important;
+}
+
+.ant-btn-primary:active {
+  background: var(--color-primary-active) !important;
+  transform: translateY(0);
+}
+
+/* Default Button */
+.ant-btn-default {
+  background: var(--color-bg-base) !important;
+  border: 1px solid var(--color-border) !important;
+  color: var(--color-text) !important;
+}
+
+.ant-btn-default:hover {
+  background: var(--color-fill) !important;
+  border-color: var(--color-primary-border) !important;
+  color: var(--color-primary) !important;
+}
+
+/* Text/Link Button */
+.ant-btn-text,
+.ant-btn-link {
+  background: transparent !important;
+  border: none !important;
+  color: var(--color-link) !important;
+  box-shadow: none !important;
+}
+
+.ant-btn-text:hover,
+.ant-btn-link:hover {
+  background: var(--color-primary-bg) !important;
+  color: var(--color-link-hover) !important;
+}
+
+/* Danger Button */
+.ant-btn-dangerous {
+  background: var(--color-error) !important;
+  border: none !important;
+  color: var(--color-text-light-solid) !important;
+}
+
+.ant-btn-dangerous:hover {
+  background: #b91c1c !important;
+}
+
+/* 4.3 Forms
+   -------------------------------------------------------------------------- */
+.ant-input,
+.ant-input-number,
+.ant-picker,
+textarea.ant-input {
+  height: var(--control-height) !important;
+  padding: var(--padding-sm) var(--padding) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  font-size: var(--font-size-base) !important;
+  background: var(--color-bg-base) !important;
+  transition: all var(--transition-fast) !important;
+  text-align: left !important;
+}
+
+textarea.ant-input {
+  height: auto !important;
+  min-height: 80px !important;
+}
+
+.ant-input:hover,
+.ant-input-number:hover,
+.ant-picker:hover {
+  border-color: var(--color-primary-border-hover) !important;
+}
+
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-number:focus,
+.ant-picker-focused {
+  border-color: var(--color-primary-border) !important;
+  box-shadow: 0 0 0 3px rgba(19, 65, 105, 0.1) !important;
+  outline: none !important;
+}
+
+/* Input with prefix/suffix */
+.ant-input-affix-wrapper {
+  padding: var(--padding-sm) var(--padding) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  background: var(--color-bg-base) !important;
+}
+
+.ant-input-affix-wrapper:hover {
+  border-color: var(--color-primary-border-hover) !important;
+}
+
+.ant-input-affix-wrapper-focused {
+  border-color: var(--color-primary-border) !important;
+  box-shadow: 0 0 0 3px rgba(19, 65, 105, 0.1) !important;
+}
+
+.ant-input-affix-wrapper .ant-input {
+  height: auto !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Select */
+.ant-select-selector {
+  height: var(--control-height) !important;
+  padding: 0 var(--padding) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  background: var(--color-bg-base) !important;
+}
+
+.ant-select-selection-item,
+.ant-select-selection-placeholder {
+  line-height: 38px !important;
+  align-self: normal !important;
+}
+
+.ant-select:hover .ant-select-selector {
+  border-color: var(--color-primary-border-hover) !important;
+}
+
+.ant-select-focused .ant-select-selector {
+  border-color: var(--color-primary-border) !important;
+  box-shadow: 0 0 0 3px rgba(19, 65, 105, 0.1) !important;
+  outline: none !important;
+}
+
+/* Select Dropdown */
+.ant-select-dropdown {
+  background: var(--color-bg-elevated) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+  padding: var(--space-xs) !important;
+  outline: none !important;
+}
+
+.ant-select-item {
+  padding: var(--padding-sm) var(--padding) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--color-text) !important;
+  outline: none !important;
+}
+
+.ant-select-item-option-active {
+  background: var(--color-fill) !important;
+  outline: none !important;
+}
+
+.ant-select-item-option-selected {
+  background: var(--color-primary-bg) !important;
+  color: var(--color-primary) !important;
+  font-weight: 500 !important;
+  outline: none !important;
+}
+
+/* Checkbox */
+.ant-checkbox-inner {
+  width: 18px !important;
+  height: 18px !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-sm) !important;
+  outline: none !important;
+}
+
+.ant-checkbox-checked .ant-checkbox-inner {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary-border) !important;
+}
+
+/* Radio */
+.ant-radio-inner {
+  width: 18px !important;
+  height: 18px !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+.ant-radio-checked .ant-radio-inner {
+  border-color: var(--color-primary-border) !important;
+}
+
+.ant-radio-checked .ant-radio-inner::after {
+  background: var(--color-primary) !important;
+}
+
+/* Switch */
+.ant-switch-checked {
+  background: var(--color-primary) !important;
+}
+
+/* 4.4 Tables
+   -------------------------------------------------------------------------- */
+.ant-table {
+  background: var(--color-bg-base) !important;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+}
+
+.ant-table-thead > tr > th {
+  background: var(--color-fill) !important;
+  color: var(--color-text) !important;
+  font-weight: 600 !important;
+  font-size: var(--font-size-sm) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  padding: var(--padding) !important;
+  border-bottom: 2px solid var(--color-border) !important;
+}
+
+.ant-table-tbody > tr > td {
+  padding: var(--padding) !important;
+  color: var(--color-text) !important;
+  border-bottom: 1px solid var(--color-border-secondary) !important;
+  vertical-align: middle !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: var(--color-primary-bg) !important;
+}
+
+.ant-table-tbody > tr:last-child > td {
+  border-bottom: none !important;
+}
+
+/* 4.5 Tabs
+   -------------------------------------------------------------------------- */
+.ant-tabs-nav {
+  margin-bottom: var(--margin-lg) !important;
+}
+
+.ant-tabs-nav::before {
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+.ant-tabs-tab {
+  padding: var(--padding-sm) var(--padding) !important;
+  color: var(--color-text-secondary) !important;
+  font-weight: 500 !important;
+  transition: color var(--transition-fast) !important;
+}
+
+.ant-tabs-tab:hover {
+  color: var(--color-primary) !important;
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--color-primary) !important;
+  font-weight: 600 !important;
+}
+
+.ant-tabs-ink-bar {
+  background: var(--color-primary) !important;
+  height: 3px !important;
+  border-radius: 3px 3px 0 0 !important;
+}
+
+/* 4.6 Tags & Badges
+   -------------------------------------------------------------------------- */
+.ant-tag {
+  padding: var(--space-xs) var(--padding-sm) !important;
+  border-radius: 6px !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 500 !important;
+  border: none !important;
+  background: var(--color-fill) !important;
+  color: var(--color-text-secondary) !important;
+}
+
+.ant-tag-blue { background: var(--color-primary-bg) !important; color: var(--color-primary) !important; }
+.ant-tag-green { background: var(--color-success-bg) !important; color: var(--color-success) !important; }
+.ant-tag-red { background: var(--color-error-bg) !important; color: var(--color-error) !important; }
+.ant-tag-orange { background: var(--color-warning-bg) !important; color: var(--color-warning) !important; }
+
+.ant-badge-count {
+  background: var(--color-primary) !important;
+  border-radius: 10px !important;
+  font-size: var(--font-size-xs) !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 4px rgba(19, 65, 105, 0.2) !important;
+}
+
+/* 4.7 Modals & Drawers
+   -------------------------------------------------------------------------- */
+.ant-modal-content {
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+.ant-modal-header {
+  padding: var(--padding-lg) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  background: var(--color-bg-base) !important;
+}
+
+.ant-modal-title {
+  font-size: var(--font-size-xl) !important;
+  font-weight: 600 !important;
+  color: var(--color-text) !important;
+}
+
+.ant-modal-body {
+  padding: var(--padding-lg) !important;
+}
+
+.ant-modal-footer {
+  padding: var(--padding) var(--padding-lg) !important;
+  border-top: 1px solid var(--color-border) !important;
+  background: var(--color-fill) !important;
+}
+
+.ant-drawer-content {
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg) !important;
+}
+
+.ant-drawer-header {
+  padding: var(--padding-lg) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+/* 4.8 Dropdowns
+   -------------------------------------------------------------------------- */
+.ant-dropdown-menu {
+  background: var(--color-bg-elevated) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+  padding: var(--space-xs) !important;
+}
+
+.ant-dropdown-menu-item {
+  padding: var(--padding-sm) var(--padding) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--color-text) !important;
+  transition: all var(--transition-fast) !important;
+  outline: none !important;
+}
+
+.ant-dropdown-menu-item:hover {
+  background: var(--color-fill) !important;
+  color: var(--color-primary) !important;
+  outline: none !important;
+}
+
+/* 4.9 Tooltips & Popovers
+   -------------------------------------------------------------------------- */
+.ant-tooltip-inner {
+  background: var(--color-primary) !important;
+  border-radius: var(--radius-md) !important;
+  padding: var(--padding-sm) var(--padding) !important;
+  font-size: var(--font-size-sm) !important;
+  outline: none !important;
+}
+
+.ant-tooltip-arrow-content {
+  --antd-arrow-background-color: var(--color-primary) !important;
+}
+
+.ant-popover-inner {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+  outline: none !important;
+}
+
+/* 4.10 Pagination
+   -------------------------------------------------------------------------- */
+.ant-pagination-item {
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--color-border) !important;
+  font-weight: 500 !important;
+}
+
+.ant-pagination-item:hover {
+  border-color: var(--color-primary-border) !important;
+  color: var(--color-primary) !important;
+}
+
+.ant-pagination-item-active {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary-border) !important;
+}
+
+.ant-pagination-item-active a {
+  color: var(--color-text-light-solid) !important;
+}
+
+/* 4.11 Alerts
+   -------------------------------------------------------------------------- */
+.ant-alert {
+  border-radius: var(--radius-md) !important;
+  border: none !important;
+  padding: var(--padding) !important;
+}
+
+.ant-alert-info { background: var(--color-info-bg) !important; }
+.ant-alert-success { background: var(--color-success-bg) !important; }
+.ant-alert-warning { background: var(--color-warning-bg) !important; }
+.ant-alert-error { background: var(--color-error-bg) !important; }
+
+/* 4.12 Progress
+   -------------------------------------------------------------------------- */
+.ant-progress-inner {
+  background: var(--color-fill) !important;
+  border-radius: 10px !important;
+}
+
+.ant-progress-bg {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-info)) !important;
+  border-radius: 10px !important;
+}
+
+/* 4.13 Breadcrumbs
+   -------------------------------------------------------------------------- */
+.ant-breadcrumb {
+  font-size: var(--font-size-sm) !important;
+  margin-bottom: var(--margin) !important;
+}
+
+.ant-breadcrumb a {
+  color: var(--color-link) !important;
+}
+
+.ant-breadcrumb a:hover {
+  color: var(--color-link-hover) !important;
+}
+
+.ant-breadcrumb-separator {
+  color: var(--color-text-quaternary) !important;
+}
+
+/* 4.14 Empty States
+   -------------------------------------------------------------------------- */
+.ant-empty-description {
+  color: var(--color-text-tertiary) !important;
+}
+
+/* 4.15 Spinners
+   -------------------------------------------------------------------------- */
+.ant-spin-dot-item {
+  background: var(--color-primary) !important;
+}
+
+/* =============================================================================
+   5. SUPERSET SPECIFIC
+   ============================================================================= */
+
+/* Dashboard Content */
+.dashboard-content,
+[class*="DashboardPage"] {
+  background: var(--color-bg-layout) !important;
+}
+
+/* Chart Containers */
+[class*="ChartContainer"],
+.slice_container {
+  background: var(--color-bg-base) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* Filter Bar */
+[class*="FilterBar"] {
+  background: var(--color-bg-container) !important;
+  border-right: 1px solid var(--color-border) !important;
+}
+
+/* List Views */
+[class*="ListView"] {
+  background: var(--color-bg-base) !important;
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--color-border) !important;
+  overflow: hidden !important;
+}
+
+/* =============================================================================
+   6. ACCESSIBILITY
+   ============================================================================= */
+*:focus-visible {
+  outline-offset: 2px !important;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none !important;
+}
