@@ -387,13 +387,16 @@ PERMANENT_SESSION_LIFETIME = td(hours=8)  # 8 hours max session
 # -----------------------------------------------------------------------------
 # 5. HTTP SECURITY HEADERS - Defense in depth
 # -----------------------------------------------------------------------------
-# These are applied via FLASK_APP_MUTATOR and Talisman if available
-TALISMAN_ENABLED = os.environ.get("SUPERSET_ENV") == "production"
+# CSP is always enabled for security, but HTTPS-only features are production-only
+_is_production = os.environ.get("SUPERSET_ENV") == "production"
+
+# Talisman is ALWAYS enabled for CSP, but force_https only in production
+TALISMAN_ENABLED = True
 TALISMAN_CONFIG = {
-    "force_https": os.environ.get("SUPERSET_ENV") == "production",
-    "strict_transport_security": True,
-    "strict_transport_security_max_age": 31536000,  # 1 year
-    "strict_transport_security_include_subdomains": True,
+    "force_https": _is_production,
+    "strict_transport_security": _is_production,
+    "strict_transport_security_max_age": 31536000 if _is_production else 0,
+    "strict_transport_security_include_subdomains": _is_production,
     "content_security_policy": {
         "default-src": "'self'",
         "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
@@ -411,6 +414,9 @@ TALISMAN_CONFIG = {
         "camera": "()",
     },
 }
+
+# Disable CSP warning since we have it configured
+CONTENT_SECURITY_POLICY_WARNING = False
 
 # Additional security headers (applied in FLASK_APP_MUTATOR)
 SECURITY_HEADERS = {
@@ -448,11 +454,28 @@ AUTH_PASSWORD_RECOVERY = False
 PUBLIC_ROLE_LIKE = None
 PUBLIC_ROLE_NAME = None
 
-# Strict permission checking
-FAB_ADD_SECURITY_VIEWS = True
-FAB_ADD_SECURITY_PERMISSION_VIEW = True
-FAB_ADD_SECURITY_VIEW_MENU_VIEW = True
-FAB_ADD_SECURITY_PERMISSION_VIEWS_VIEW = True
+# FAB Security Views Configuration
+# Superset 6.x uses React SPA pages for security management:
+# - /users/ -> React UsersList component
+# - /roles/ -> React RolesList component
+# - /list_groups/ -> React GroupsList component
+# - /rowlevelsecurity/list -> React RowLevelSecurityList component
+#
+# We disable the legacy FAB server-side views (Permissions, ViewMenus, PermissionViews)
+# which use old Flask templates that don't match Superset's modern React UI.
+# The React SPA pages are automatically added by Superset for admin users.
+
+# Keep FAB security API enabled (needed by React components)
+FAB_ADD_SECURITY_API = True
+
+# Disable legacy FAB server-side security views (use React SPA instead)
+FAB_ADD_SECURITY_VIEWS = False
+FAB_ADD_SECURITY_PERMISSION_VIEW = False
+FAB_ADD_SECURITY_VIEW_MENU_VIEW = False
+FAB_ADD_SECURITY_PERMISSION_VIEWS_VIEW = False
+
+# Enable Superset's native React security menu
+SUPERSET_SECURITY_VIEW_MENU = True
 
 # -----------------------------------------------------------------------------
 # 8. LOGGING & AUDITING - Security event logging
@@ -479,7 +502,8 @@ ALLOW_FULL_CSV_EXPORT = False  # Disable bulk data export
 # -----------------------------------------------------------------------------
 # 10. PROXY & NETWORK SECURITY
 # -----------------------------------------------------------------------------
-ENABLE_PROXY_FIX = True
+# Only enable proxy fix in production (behind nginx reverse proxy)
+ENABLE_PROXY_FIX = os.environ.get("SUPERSET_ENV") == "production"
 PROXY_FIX_CONFIG = {
     "x_for": 1,
     "x_proto": 1,
@@ -488,7 +512,7 @@ PROXY_FIX_CONFIG = {
     "x_prefix": 1,
 }
 
-# Trusted proxy headers only
+# URL scheme: HTTPS in production, HTTP in development
 PREFERRED_URL_SCHEME = "https" if os.environ.get("SUPERSET_ENV") == "production" else "http"
 
 # -----------------------------------------------------------------------------
@@ -796,84 +820,74 @@ D3_FORMAT = {
 CURRENCIES = ["EUR"]
 
 # =============================================================================
-# FEATURE FLAGS - Security-focused configuration
+# FEATURE FLAGS - Security-focused + Simplified UI configuration
 # =============================================================================
 
 FEATURE_FLAGS = {
-    # Dashboard features
+    # Dashboard features (keep enabled for core functionality)
     "DASHBOARD_NATIVE_FILTERS": True,
     "HORIZONTAL_FILTER_BAR": True,
     "DASHBOARD_RBAC": True,  # Required for dashboard-only access
     "DASHBOARD_VIRTUALIZATION": True,
 
-    # Drill features
+    # Drill features (useful for data exploration)
     "DRILL_TO_DETAIL": True,
     "DRILL_BY": True,
 
     # Export features - DISABLED for security (data exfiltration prevention)
     "ALLOW_FULL_CSV_EXPORT": False,
 
-    # SQL Lab - controlled via role permissions
+    # SQL Lab - controlled via role permissions, hidden from non-admin
     "SQLLAB_BACKEND_PERSISTENCE": True,
 
-    # UI preferences
-    "LISTVIEWS_DEFAULT_CARD_VIEW": True,
-    "DATAPANEL_CLOSED_BY_DEFAULT": False,
-    "FILTERBAR_CLOSED_BY_DEFAULT": False,
+    # UI preferences - Simplified experience
+    "LISTVIEWS_DEFAULT_CARD_VIEW": True,   # Cards are more user-friendly
+    "DATAPANEL_CLOSED_BY_DEFAULT": True,   # Hide technical data panel
+    "FILTERBAR_CLOSED_BY_DEFAULT": False,  # Keep filters visible
 
     # Security - DISABLED (prevent embedding/XSS vectors)
     "EMBEDDABLE_CHARTS": False,
     "EMBEDDED_SUPERSET": False,
 
-    # Advanced features - DISABLED for security (code injection prevention)
+    # Advanced features - DISABLED for security and simplicity
     "ENABLE_TEMPLATE_PROCESSING": False,  # Prevent Jinja template injection
     "ENABLE_JAVASCRIPT_CONTROLS": False,  # Prevent XSS via custom JS
-    "TAGGING_SYSTEM": False,
-    "THUMBNAILS": False,
-    "ALERT_REPORTS": False,
+    "TAGGING_SYSTEM": False,              # Hide tagging complexity
+    "THUMBNAILS": False,                  # Reduce visual clutter
+    "ALERT_REPORTS": False,               # Hide alert configuration
 
     # Row Level Security - ENABLED for data isolation
     "ROW_LEVEL_SECURITY": True,
 
     # Escape HTML in markdown - ENABLED for XSS prevention
     "ESCAPE_MARKDOWN_HTML": True,
+
+    # Additional simplifications
+    "DASHBOARD_CROSS_FILTERS": True,      # Keep cross-filtering (intuitive)
+    "GLOBAL_ASYNC_QUERIES": False,        # Hide async query complexity
+    "DASHBOARD_FILTERS_EXPERIMENTAL": False,  # Hide experimental features
 }
 
 # =============================================================================
-# DASHBOARD-ONLY ACCESS FOR NON-ADMIN USERS
+# SIMPLIFIED UI - Clean interface for end users
 # =============================================================================
-# This configuration restricts non-admin users to only view dashboards.
-# - Users are redirected to their dashboard after login
+# Configuration to provide a streamlined experience for non-admin users:
+# - Users are redirected to their dashboard list after login
 # - Navigation menu is simplified (no SQL Lab, no Chart creation, etc.)
-# - Only Admin role has full access
-
-# Menu items visible to dashboard-only users (Viewer role)
-# Admin users will see the full menu
-MENU_HIDE_USER_INFO_ITEMS = [
-    "Security",
-    "List Users",
-    "List Roles",
-]
+# - Admin users retain full access via role permissions
 
 # Require authentication: disable anonymous (Public) access
-# Hides Superset UI and menu for non-logged-in users
 PUBLIC_ROLE_NAME = None
-
-# Do not grant Public role permissions
 PUBLIC_ROLE_LIKE = None
 
+# Note: Menu items are hidden via CSS for non-admin users (see formasup-theme.css)
+# Admin users see all menus thanks to the 'admin-user' body class
 
-# Role configuration for dashboard-only access
-# These permissions should be configured via Superset UI:
-# Settings > List Roles > Create "Viewer" role with only:
-# - can read on Dashboard
-# - can read on DashboardFilterStateRestApi
-# - can read on DashboardPermalinkRestApi
-# - datasource access on [database].[schema].[table] (for filters)
-# - can_language_pack on Superset
+# Keep security views enabled for admin users
+# FAB_ADD_SECURITY_VIEWS is set to True in section 6 above
 
-# After login, redirect non-admin users to dashboard list
-# Admin detection is done in FLASK_APP_MUTATOR below
+# Disable complex features in the UI for all users
+DISABLE_DATASET_SOURCE_EDIT = True  # Prevent users from editing dataset sources
 
 # =============================================================================
 # CACHE CONFIGURATION
@@ -1122,6 +1136,7 @@ def FLASK_APP_MUTATOR(app):
     def inject_custom_theme(response):
         """Inject FormaSup premium theme CSS into all HTML responses."""
         from flask import request  # type: ignore[import]
+        from flask_login import current_user  # type: ignore[import]
 
         try:
             # Skip non-HTML responses
@@ -1142,7 +1157,16 @@ def FLASK_APP_MUTATOR(app):
 
             if "</head>" in content and css_link not in content:
                 content = content.replace("</head>", f"{css_link}</head>", 1)
-                response.set_data(content)
+
+            # Add admin-user class to body for admins (enables full menu visibility)
+            if current_user.is_authenticated:
+                user_roles = [role.name for role in current_user.roles]
+                if "Admin" in user_roles:
+                    # Add class to body tag to enable admin-only CSS overrides
+                    if '<body' in content and 'class="admin-user"' not in content:
+                        content = content.replace('<body', '<body class="admin-user"', 1)
+
+            response.set_data(content)
         except Exception:
             pass
 

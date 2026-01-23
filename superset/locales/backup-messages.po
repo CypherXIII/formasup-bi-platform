@@ -9360,7 +9360,7 @@ msgid "Search box"
 msgstr "Boîte de recherche"
 
 msgid "Search by query text"
-msgstr "Recherche par texte d'interrogation"
+msgstr "Recherche par mot de requête"
 
 msgid "Search columns"
 msgstr "Rechercher des colonnes"
