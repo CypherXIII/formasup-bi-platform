@@ -320,6 +320,84 @@ def cleanup_apprentice_city(
         logger.exception(f"Error during city cleanup: {e}")
 
 
+def cleanup_unreferenced_training(
+    conn_pg: psycopg2.extensions.connection, cfg: Config
+) -> None:
+    """! @brief Removes training records not linked to valid registrations.
+    @param conn_pg Active PostgreSQL connection.
+    @param cfg Configuration containing the temporary schema name.
+    @note Training records are kept only if they have at least one registration
+          with a signature_date after 2022-06-30.
+    """
+    logger = logging.getLogger("migration")
+    schema = cfg.temp_schema
+    logger.info("=== Cleaning unreferenced training records ===")
+
+    try:
+        batch_size = max(100, min(cfg.batch_size, 5000))
+        delete_sql = f"""
+            DELETE FROM {schema}.training t
+            WHERE ctid IN (
+                SELECT ctid FROM {schema}.training t
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM {schema}.training_course tc
+                    JOIN {schema}.training_group tg ON tg.course_id = tc.id
+                    JOIN {schema}.training_option topt ON topt.group_id = tg.id
+                    JOIN {schema}.registration r ON r.option_id = topt.id
+                    WHERE tc.training_id = t.id
+                      AND r.signature_date IS NOT NULL
+                      AND r.signature_date > DATE '2022-06-30'
+                )
+                LIMIT {{batch_size}}
+            );
+        """
+
+        deleted_count = _delete_in_batches(conn_pg, logger, delete_sql, batch_size)
+        logger.info(f"{deleted_count} unreferenced training records deleted.")
+
+    except Exception as e:
+        conn_pg.rollback()
+        logger.exception("Error during unreferenced training cleanup: %s", e)
+
+
+def cleanup_unreferenced_rncp(
+    conn_pg: psycopg2.extensions.connection, cfg: Config
+) -> None:
+    """! @brief Removes RNCP records that are not referenced by any training.
+    @param conn_pg Active PostgreSQL connection.
+    @param cfg Configuration containing the temporary schema name.
+    @note RNCP records are kept only if:
+          - Their id is referenced in training.rncp_id
+          - OR their code matches training.rncp_number
+    """
+    logger = logging.getLogger("migration")
+    schema = cfg.temp_schema
+    logger.info("=== Cleaning unreferenced RNCP records ===")
+
+    try:
+        batch_size = max(100, min(cfg.batch_size, 5000))
+        delete_sql = f"""
+            DELETE FROM {schema}.rncp r
+            WHERE ctid IN (
+                SELECT ctid FROM {schema}.rncp r
+                WHERE r.id NOT IN (
+                    SELECT rncp_id FROM {schema}.training WHERE rncp_id IS NOT NULL
+                )
+                AND r.code NOT IN (
+                    SELECT rncp_number FROM {schema}.training WHERE rncp_number IS NOT NULL
+                )
+                LIMIT {{batch_size}}
+            );
+        """
+
+        deleted_count = _delete_in_batches(conn_pg, logger, delete_sql, batch_size)
+        logger.info(f"{deleted_count} unreferenced RNCP records deleted.")
+
+    except Exception as e:
+        conn_pg.rollback()
+        logger.exception("Error during unreferenced RNCP cleanup: %s", e)
+
+
 def cleanup_obsolete_companies(
     conn_pg: psycopg2.extensions.connection, cfg: Config
 ) -> None:
@@ -536,6 +614,8 @@ CLEANUP_TASKS: List[Tuple[str, Callable]] = [  # type: ignore
     ("sync_corrected_sirets", sync_corrected_sirets),
     ("cleanup_registration", cleanup_registration),
     ("cleanup_apprentice_city", cleanup_apprentice_city),
+    ("cleanup_unreferenced_training", cleanup_unreferenced_training),
+    ("cleanup_unreferenced_rncp", cleanup_unreferenced_rncp),
     ("cleanup_obsolete_companies", cleanup_obsolete_companies),
     ("specific_cleanup", run_specific_cleanup),
     ("cleanup_staging_temp_companies", cleanup_staging_temp_companies),
