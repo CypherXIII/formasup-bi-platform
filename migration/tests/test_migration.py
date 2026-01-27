@@ -509,6 +509,118 @@ class TestCleanupStagingUnreferencedCompanies:
         assert mock_conn.commit.called
 
 
+class TestCleanupUnreferencedTraining:
+    """Tests for cleanup_unreferenced_training function."""
+
+    def test_cleanup_unreferenced_training_deletes_records(self):
+        """Test deletion of training records with no valid registrations."""
+        from cleanup import cleanup_unreferenced_training
+
+        mock_cursor = MagicMock()
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+
+        config = Config()
+        # First batch deletes 3, second batch deletes 0 (end of batching)
+        mock_cursor.rowcount = 3
+
+        cleanup_unreferenced_training(mock_conn, config)
+
+        assert mock_cursor.execute.called
+        assert mock_conn.commit.called
+        # Verify DELETE query contains the signature_date condition
+        call_args = mock_cursor.execute.call_args_list[0][0][0]
+        assert "signature_date" in call_args
+        assert "2022-06-01" in call_args
+
+    def test_cleanup_unreferenced_training_no_records(self):
+        """Test cleanup when no unreferenced training records exist."""
+        from cleanup import cleanup_unreferenced_training
+
+        mock_cursor = MagicMock()
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+
+        config = Config()
+        mock_cursor.rowcount = 0
+
+        cleanup_unreferenced_training(mock_conn, config)
+
+        assert mock_cursor.execute.called
+        assert mock_conn.commit.called
+
+    def test_cleanup_unreferenced_training_error_handling(self):
+        """Test error handling in cleanup_unreferenced_training."""
+        from cleanup import cleanup_unreferenced_training
+
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value.__enter__.side_effect = Exception("DB error")
+
+        config = Config()
+
+        try:
+            cleanup_unreferenced_training(mock_conn, config)
+        except Exception:
+            pytest.fail("cleanup_unreferenced_training should handle exceptions gracefully")
+
+        assert mock_conn.rollback.called
+
+
+class TestCleanupUnreferencedRncp:
+    """Tests for cleanup_unreferenced_rncp function."""
+
+    def test_cleanup_unreferenced_rncp_deletes_records(self):
+        """Test deletion of RNCP records not referenced by training."""
+        from cleanup import cleanup_unreferenced_rncp
+
+        mock_cursor = MagicMock()
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+
+        config = Config()
+        mock_cursor.rowcount = 5
+
+        cleanup_unreferenced_rncp(mock_conn, config)
+
+        assert mock_cursor.execute.called
+        assert mock_conn.commit.called
+        # Verify DELETE query checks both rncp_id and rncp_number
+        call_args = mock_cursor.execute.call_args_list[0][0][0]
+        assert "rncp_id" in call_args
+        assert "rncp_number" in call_args
+
+    def test_cleanup_unreferenced_rncp_no_records(self):
+        """Test cleanup when no unreferenced RNCP records exist."""
+        from cleanup import cleanup_unreferenced_rncp
+
+        mock_cursor = MagicMock()
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+
+        config = Config()
+        mock_cursor.rowcount = 0
+
+        cleanup_unreferenced_rncp(mock_conn, config)
+
+        assert mock_cursor.execute.called
+        assert mock_conn.commit.called
+
+    def test_cleanup_unreferenced_rncp_error_handling(self):
+        """Test error handling in cleanup_unreferenced_rncp."""
+        from cleanup import cleanup_unreferenced_rncp
+
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value.__enter__.side_effect = Exception("DB error")
+
+        config = Config()
+
+        try:
+            cleanup_unreferenced_rncp(mock_conn, config)
+        except Exception:
+            pytest.fail("cleanup_unreferenced_rncp should handle exceptions gracefully")
+
+        assert mock_conn.rollback.called
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

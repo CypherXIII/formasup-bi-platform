@@ -56,13 +56,14 @@ def cleanup_temp_apprentice_company(
     try:
         with conn_pg.cursor() as cur:
             cur.execute(f"DELETE FROM {schema}.apprentice WHERE discr LIKE '%temp%';")
+            app_cnt = cur.rowcount
             cur.execute(f"DELETE FROM {schema}.company WHERE discr LIKE '%temp%';")
+            cmp_cnt = cur.rowcount
         conn_pg.commit()
+        logger.info("Temporary row cleanup finished: %d apprentices, %d companies.", app_cnt, cmp_cnt)
     except Exception as e:
         conn_pg.rollback()
         logger.exception("Error during temporary table cleanup: %s", e)
-
-        logger.info("Temporary row cleanup finished.")
 
 
 def sync_corrected_sirets(
@@ -247,19 +248,27 @@ def cleanup_registration(conn_pg: psycopg2.extensions.connection, cfg: Config) -
     @param conn_pg Active PostgreSQL connection.
     @param cfg Configuration containing the temporary schema name.
     @note Deletes registrations that:
-          - have no associated apprentice
-          - have no associated option
-          - are marked as deleted (deleted_at is not NULL)
+          - have no associated apprentice (apprentice_id IS NULL)
+          - have no associated option (option_id IS NULL)
+          - are marked as deleted (deleted_at IS NOT NULL)
           - have a status that contains 'double'
+          - have a start_date before 2022-06-01
+          - are drafts (draft = 1)
     """
     logger = logging.getLogger("migration")
     schema = cfg.temp_schema
     logger.info("=== Cleaning registration table ===")
     try:
         with conn_pg.cursor() as cur:
-            cur.execute(
-                f"DELETE FROM {schema}.registration WHERE apprentice_id IS NULL OR option_id IS NULL OR deleted_at IS NOT NULL OR status LIKE '%double%' OR start_date < '2022-06-01' OR draft=1 ;"
-            )
+            cur.execute(f"""
+                DELETE FROM {schema}.registration
+                WHERE apprentice_id IS NULL
+                   OR option_id IS NULL
+                   OR deleted_at IS NOT NULL
+                   OR status LIKE '%double%'
+                   OR start_date < '2022-06-01'
+                   OR draft = 1;
+            """)
             cnt = cur.rowcount
         conn_pg.commit()
         logger.info("%d records deleted.", cnt)
@@ -327,7 +336,7 @@ def cleanup_unreferenced_training(
     @param conn_pg Active PostgreSQL connection.
     @param cfg Configuration containing the temporary schema name.
     @note Training records are kept only if they have at least one registration
-          with a signature_date after 2022-06-30.
+          with a signature_date after 2022-06-01.
     """
     logger = logging.getLogger("migration")
     schema = cfg.temp_schema
@@ -346,7 +355,7 @@ def cleanup_unreferenced_training(
                     JOIN {schema}.registration r ON r.option_id = topt.id
                     WHERE tc.training_id = t.id
                       AND r.signature_date IS NOT NULL
-                      AND r.signature_date > DATE '2022-06-30'
+                      AND r.signature_date > DATE '2022-06-01'
                 )
                 LIMIT {{batch_size}}
             );
@@ -523,29 +532,21 @@ def run_specific_cleanup(conn_pg: psycopg2.extensions.connection, cfg: Config) -
                 cur.execute(f"DROP TABLE IF EXISTS {schema}.company_duplicate_map;")
             conn_pg.commit()
 
-        logger.info("Deleting deadlines with deleted_at not NULL...")
+        logger.info("Deleting records with deleted_at not NULL...")
 
         with conn_pg.cursor() as cur:
             cur.execute(f"DELETE FROM {schema}.deadline WHERE deleted_at IS NOT NULL;")
             d_cnt = cur.rowcount
-        conn_pg.commit()
-        logger.info("%d deadlines deleted.", d_cnt)
-
-        with conn_pg.cursor() as cur:
             cur.execute(f"DELETE FROM {schema}.billing WHERE deleted_at IS NOT NULL;")
             b_cnt = cur.rowcount
-        conn_pg.commit()
-        logger.info("%d invoices deleted.", b_cnt)
-
-        with conn_pg.cursor() as cur:
             cur.execute(
                 f"DELETE FROM {schema}.billing_line WHERE deleted_at IS NOT NULL;"
             )
             bl_cnt = cur.rowcount
         conn_pg.commit()
-        logger.info("%d invoice lines deleted.", bl_cnt)
+        logger.info("%d deadlines, %d invoices, %d invoice lines deleted.", d_cnt, b_cnt, bl_cnt)
 
-        logger.info("Names/first names formatted.")
+        logger.info("Formatting names/first names...")
         with conn_pg.cursor() as cur:
             cur.execute(f"UPDATE {schema}.apprentice SET last_name = UPPER(last_name);")
             cur.execute(
@@ -554,14 +555,10 @@ def run_specific_cleanup(conn_pg: psycopg2.extensions.connection, cfg: Config) -
         conn_pg.commit()
 
         logger.info("Cleaning dimension tables...")
+        # Note: training and company cleanup are handled by dedicated functions:
+        # - cleanup_unreferenced_training (runs earlier)
+        # - cleanup_obsolete_companies (runs earlier)
         dimension_cleanup = {
-            "company": {
-                "key": "id",
-                "references": [
-                    ("registration", "host_company_id"),
-                    ("billing", "company_id"),
-                ],
-            },
             "apprentice": {
                 "key": "id",
                 "references": [("registration", "apprentice_id")],
@@ -578,10 +575,6 @@ def run_specific_cleanup(conn_pg: psycopg2.extensions.connection, cfg: Config) -
             "training_course": {
                 "key": "id",
                 "references": [("training_group", "course_id")],
-            },
-            "training": {
-                "key": "id",
-                "references": [("training_course", "training_id")],
             },
         }
         for table, conf in dimension_cleanup.items():
@@ -618,7 +611,8 @@ CLEANUP_TASKS: List[Tuple[str, Callable]] = [  # type: ignore
     ("cleanup_unreferenced_rncp", cleanup_unreferenced_rncp),
     ("cleanup_obsolete_companies", cleanup_obsolete_companies),
     ("specific_cleanup", run_specific_cleanup),
-    ("cleanup_staging_temp_companies", cleanup_staging_temp_companies),
+    # Note: cleanup_staging_temp_companies is not needed since
+    # cleanup_staging_unreferenced_companies removes all unreferenced companies
     ("cleanup_staging_unreferenced_companies", cleanup_staging_unreferenced_companies),
 ]
 
