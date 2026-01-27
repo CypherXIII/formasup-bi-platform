@@ -4,7 +4,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10+-green)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-54%20Passed-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/Tests-106%20Passed-brightgreen)](#testing)
 [![Coverage](https://img.shields.io/badge/Coverage-80%25+-yellowgreen)](#testing)
 
 ## Table of Contents

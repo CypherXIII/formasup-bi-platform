@@ -2,7 +2,7 @@
 
 > Test suite for the MariaDB to PostgreSQL migration system.
 
-[![Tests](https://img.shields.io/badge/Tests-54%20Passed-brightgreen)](#running-tests)
+[![Tests](https://img.shields.io/badge/Tests-106%20Passed-brightgreen)](#running-tests)
 [![Coverage](https://img.shields.io/badge/Coverage-80%25+-yellowgreen)](#running-tests)
 
 ---
