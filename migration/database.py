@@ -14,9 +14,9 @@ import time
 from contextlib import contextmanager
 from typing import Any, Dict, Iterator, List, Tuple
 
-import psycopg2
-from psycopg2 import pool
-import pymysql
+import psycopg2 # type: ignore
+from psycopg2 import pool # type: ignore
+import pymysql # type: ignore
 
 from config import Config
 

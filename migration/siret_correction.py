@@ -14,11 +14,9 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional, Tuple
 
-import psycopg2  # type: ignore
 import pymysql  # type: ignore
 
 from api_client import RateLimitedAPI
-from config import Config
 from database import ma_execute
 
 
@@ -549,7 +547,7 @@ def correct_invalid_siret(
         if filtered_candidates:
             valid_candidates = filtered_candidates
 
-        all_sirets = [c["corrected_siret"] for c in valid_candidates]
+        all_sirets = [c["corrected_siret"] for c in valid_candidates]  # noqa: F841
 
         logger.info(
             f"Found {len(valid_candidates)} correction(s) for {invalid_siret}: "
