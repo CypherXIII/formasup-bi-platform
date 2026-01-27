@@ -11,12 +11,15 @@
 
 ```text
 tests/
-├── test_migration.py     # Core migration tests (config, args, metrics)
-├── test_database.py      # Database operation tests
-├── test_integration.py   # End-to-end workflow tests
-├── test_utils.py         # Utility and API client tests
-├── __init__.py           # Test module init
-└── README.md             # This documentation
+├── test_migration.py         # Core migration tests (config, args, metrics)
+├── test_database.py          # Database operation tests
+├── test_integration.py       # End-to-end workflow tests
+├── test_siret_correction.py  # SIRET validation and correction tests
+├── test_opco_tabular.py      # OPCO enrichment tests
+├── test_utils.py             # Utility and API client tests
+├── conftest.py               # Pytest fixtures
+├── __init__.py               # Test module init
+└── README.md                 # This documentation
 ```
 
 ---

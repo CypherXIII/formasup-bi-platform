@@ -2,7 +2,7 @@
 
 > Test suite for the Superset configuration and build scripts.
 
-[![Tests](https://img.shields.io/badge/Tests-11%20Passed-brightgreen)](#running-tests)
+[![Tests](https://img.shields.io/badge/Tests-25%20Passed-brightgreen)](#running-tests)
 [![Coverage](https://img.shields.io/badge/Coverage-85%25+-yellowgreen)](#running-tests)
 
 ---

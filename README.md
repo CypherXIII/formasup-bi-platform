@@ -482,7 +482,7 @@ sudo systemctl start superset
 | Module     | Tests | Coverage | Description                          |
 |------------|-------|----------|--------------------------------------|
 | Migration  | 106   | 80%+     | Database, API, SIRET, OPCO tests     |
-| Superset   | 11    | 85%+     | Configuration and build tests        |
+| Superset   | 25    | 85%+     | Configuration and build tests        |
 
 ### Running Tests
 

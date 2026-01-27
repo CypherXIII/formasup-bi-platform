@@ -438,12 +438,13 @@ pytest tests/test_database.py -v
 
 ### Test Categories
 
-| Category     | Tests | Description                    |
-|--------------|-------|--------------------------------|
-| Unit         | 27    | Individual function tests      |
-| Integration  | 13    | Workflow and config tests      |
-| Utilities    | 14    | Logger, API client tests       |
-| **Total**    | 54    | All passing                    |
+| Category          | Tests | Description                         |
+|-------------------|-------|-------------------------------------|
+| Unit              | 62    | Individual function tests           |
+| Integration       | 13    | Workflow and config tests           |
+| SIRET Correction  | 18    | SIRET validation and Luhn tests     |
+| Utilities         | 13    | Logger, API client tests            |
+| **Total**         | 106   | All passing                         |
 
 ## Security
 

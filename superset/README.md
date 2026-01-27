@@ -4,7 +4,7 @@
 
 [![Superset](https://img.shields.io/badge/Superset-6.0.0-orange)](https://superset.apache.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-11%20Passed-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/Tests-25%20Passed-brightgreen)](#testing)
 [![Coverage](https://img.shields.io/badge/Coverage-85%25+-yellowgreen)](#testing)
 
 ## Table of Contents

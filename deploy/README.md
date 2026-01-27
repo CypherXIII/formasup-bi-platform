@@ -79,7 +79,7 @@ sudo ufw enable
 sudo mkdir -p /opt/formasup-bi
 sudo chown $USER:$USER /opt/formasup-bi
 cd /opt/formasup-bi
-git clone https://github.com/formasup-auvergne/postgres_docker.git .
+git clone https://github.com/CypherXIII/formasup-bi-platform.git .
 ```
 
 ### 2. Configure Environment
