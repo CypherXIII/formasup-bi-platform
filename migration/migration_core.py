@@ -99,7 +99,7 @@ def run_migration(
         # Get the columns from MariaDB and keep only the common columns
         with conn_maria.cursor() as ma_cur:
             maria_cols = get_mariadb_columns(ma_cur, table)
-        
+
         # Intersection: columns present in both databases
         common_cols = []
         common_types = []
@@ -107,11 +107,11 @@ def run_migration(
             if col in maria_cols:
                 common_cols.append(col)
                 common_types.append(pg_types[i])
-        
+
         if not common_cols:
             logger.warning(f"No common columns between PostgreSQL and MariaDB for table {table}")
             continue
-        
+
         if len(common_cols) < len(pg_cols):
             missing = set(pg_cols) - set(common_cols)
             logger.info(f"Table {table}: {len(missing)} columns missing in MariaDB: {missing}")
@@ -225,7 +225,7 @@ def run_migration(
                     pg_cur.execute(
                         f"""
                         INSERT INTO {cfg.pg_schema}.migration_table_log (
-                            migration_name, table_name, processed, inserted, skipped, 
+                            migration_name, table_name, processed, inserted, skipped,
                             final_count, duration_seconds, success, error
                         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
